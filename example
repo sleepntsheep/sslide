@@ -90,6 +90,7 @@ Chisato supremacy
 
 #image: only take in x,y,w
 #height of image will be calculated by ratio of original image
+#comment is done by # symbol at beginning of the line
 ;0;50;100;50
 %chisato.png
 
@@ -104,6 +105,8 @@ Lycoreco
 
 ;10;60;40;10
 Why 86 is best anime
+
+# frames are rendered from first line to last line, so you can overwrite previous frame like this
 
 @
 
@@ -122,3 +125,15 @@ Test UTF8
 
 @
 
+
+#absolute path and relative path both work
+#relative path is relative to slide's directory, not program directory
+;f
+Absolute path img
+Commented out to prevent error on other machine
+#%/home/sheep/Pictures/background.png
+
+;f
+test absolute path
+
+@

@@ -1,44 +1,50 @@
 -- premake5.lua
 workspace "sslide"
-   configurations { "Debug", "Release", "Mingw" }
+configurations { "Debug", "Release", "Mingw", "MinimalFont" }
 
 newaction {
-   trigger     = "clean",
-   description = "clean the software",
-   execute     = function ()
-      print("clean the build...")
-      os.rmdir("./build")
-      os.rmdir("Debug")
-      os.rmdir("Release")
-      os.rmdir("Mingw")
-      os.rmdir("Obj")
-      print("done.")
-   end
+    trigger     = "clean",
+    description = "clean the software",
+    execute     = function ()
+        print("clean the build...")
+        os.rmdir("./build")
+        os.rmdir("Debug")
+        os.rmdir("Release")
+        os.rmdir("Mingw")
+        os.rmdir("MinimalFont")
+        os.rmdir("Obj")
+        print("done.")
+    end
 }
 
 project "sslide"
-   kind "ConsoleApp"
-   language "C"
-   targetdir "%{cfg.buildcfg}"
+kind "ConsoleApp"
+language "C"
+targetdir "%{cfg.buildcfg}"
 
-   files { "*.h", "*.c" }
-   defines { "USE_UNIFONT" }
+files { "*.h", "*.c" }
 
-   filter "configurations:Debug"
-      defines { "DEBUG" }
-      symbols "On"
-      links { "SDL2", "SDL2_ttf", "SDL2_image" }
+filter "configurations:Mingw"
+    system "Windows"
+    defines { "NDEBUG" }
+    optimize "On"
+    defines { "main=SDL_main" }
+    links { "mingw32", "SDL2main", "comdlg32", "ole32" }
 
-   filter "configurations:Release"
-      defines { "NDEBUG" }
-      optimize "On"
-      links { "SDL2", "SDL2_ttf", "SDL2_image" }
+filter "configurations:Debug"
+    defines { "DEBUG" }
+    symbols "On"
+    defines { "USE_UNIFONT" }
 
-   filter "configurations:Mingw"
-      system "Windows"
-      defines { "NDEBUG" }
-      optimize "On"
-      defines { "main=SDL_main" }
-      links { "mingw32", "SDL2main", "SDL2", "SDL2_ttf", "SDL2_image", "comdlg32", "ole32" }
+filter "configurations:Release"
+    defines { "NDEBUG" }
+    optimize "On"
+    defines { "USE_UNIFONT" }
 
-      
+filter {}
+    links { "SDL2", "SDL2_ttf", "SDL2_image" }
+
+filter "configurations:MinimalFont"
+    defines { "USE_UNIFONT=0" }
+
+

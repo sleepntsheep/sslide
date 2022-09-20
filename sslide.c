@@ -33,6 +33,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <shlwapi.h>
 #else
 #include <unistd.h>
 #include <pwd.h>
@@ -74,7 +75,6 @@ static const SDL_Color bg = { 255, 255, 255, 255 };
 static const SDL_Color fg = { 0,   0,   0,   255 };
 static Slide slide;
 static char *fontpath = NULL;
-static bool finisstdin = false;
 /* work directory, if reading from file
  * this is directory which that file is in
  * else if reading from stdin it's NULL */
@@ -303,18 +303,21 @@ int main(int argc, char **argv) {
     FILE *fin = NULL;
     char *srcfile = NULL;
     if (argc > 1) {
-        if (!strcmp(argv[1], "-")) {
+        if (argv[1][0] == '-') {
             fin = stdin;
-            finisstdin = true;
         } else {
             srcfile = argv[1];
         }
     } else {
         srcfile = (char*)tinyfd_openFileDialog("Open slide", gethomedir(), 0, NULL, NULL, false);
     }
-    fin = fopen(srcfile, "r");
 
     if (srcfile != NULL /* not reading from stdin */) {
+        fin = fopen(srcfile, "r");
+        if (fin == NULL) {
+            fprintf(stderr, "Failed opening file\n");
+            exit(1);
+        }
         /* basename() is not portable */
         char *sep = srcfile + strlen(srcfile);
         while (sep > srcfile && 
@@ -326,8 +329,10 @@ int main(int argc, char **argv) {
             sep--;
         if (sep > srcfile) {
             *sep = 0;
+            slidewd = srcfile;
+        } else {
+            slidewd = ".";
         }
-        slidewd = srcfile;
     }
 
     readconfig();
@@ -356,6 +361,7 @@ Slide parse_slide_from_file(FILE *in) {
                     break;
                 }
             }
+
             if (ret == NULL /* EOF */) {
                 if (arrlen(slide) == 0) {
                     fprintf(stderr, "Error parsing: Slide has no page, make sure every page is terminated");
@@ -398,7 +404,13 @@ Slide parse_slide_from_file(FILE *in) {
                         exit(1);
                     }
                     char *filename;
-                    if (finisstdin) {
+                    if (in == stdin
+#ifndef _WIN32 /* path beginning with root is absolute path */
+                            || buf[1] == '/'
+#else /* relative path in windows is complicated */
+                            || !PathIsRelative(buf+1)
+#endif
+                            ) {
                         filename = buf+1;
                     } else {
                         filename = malloc(PATH_MAX);
@@ -408,7 +420,7 @@ Slide parse_slide_from_file(FILE *in) {
                         memcpy(filename + slidewdlen + 1, buf+1, basenamelen);
                         filename[slidewdlen + 1 + basenamelen] = '\x0';
                     }
-                    
+
                     frame.type = FRAMEIMAGE;
                     frame.image.texture = IMG_LoadTexture(rend, filename);
                     if (frame.image.texture == NULL) {
