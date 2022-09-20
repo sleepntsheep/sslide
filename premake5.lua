@@ -22,6 +22,7 @@ project "sslide"
    targetdir "%{cfg.buildcfg}"
 
    files { "*.h", "*.c" }
+   defines { "USE_UNIFONT" }
 
    filter "configurations:Debug"
       defines { "DEBUG" }
