@@ -19,7 +19,9 @@ project "sslide"
 
    filter "configurations:Mingw"
       system "Windows"
+      defines { "NDEBUG" }
+      optimize "On"
       defines { "main=SDL_main" }
-      links { "SDL2main", "mingw32" }
+      links { "mingw32", "SDL2main" }
 
    links { "SDL2", "SDL2_ttf", "SDL2_image" }
