@@ -28,13 +28,16 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#define PATH_SEPERATOR '\\'
 #else
 #include <unistd.h>
 #include <pwd.h>
+#define PATH_SEPERATOR '/'
 #endif
 
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 enum FrameType {
     FRAMETEXT,
@@ -68,6 +71,11 @@ static const SDL_Color bg = { 255, 255, 255, 255 };
 static const SDL_Color fg = { 0,   0,   0,   255 };
 static Slide slide;
 static char *fontpath = NULL;
+static bool finisstdin = false;
+/* work directory, if reading from file
+ * this is directory which that file is in
+ * else if reading from stdin it's NULL */
+static char *slidewd = NULL;
 
 void readconfig();
 void loadfonts();
@@ -78,7 +86,6 @@ void drawframe(Frame frame);
 void run();
 void cleanup();
 char *gethomedir();
-
 
 void loadfonts() {
     if (fontpath == NULL) {
@@ -290,15 +297,17 @@ void run() {
 }
 
 int main(int argc, char **argv) {
-    FILE *fin = stdin;
+    FILE *fin = NULL;
+    char *srcfile = NULL;
     if (argc > 1) {
         if (!strcmp(argv[1], "-")) {
             fin = stdin;
+            finisstdin = true;
         } else {
-            fin = fopen(argv[1], "r");
+            srcfile = argv[1];
         }
     } else {
-        const char *srcfilename = tinyfd_openFileDialog(
+        srcfile = tinyfd_openFileDialog(
                 "Slide file",
                 gethomedir(),
                 0,
@@ -306,7 +315,16 @@ int main(int argc, char **argv) {
                 NULL,
                 false
                 );
-        fin = fopen(srcfilename, "r");
+    }
+    fin = fopen(srcfile, "r");
+
+    if (srcfile != NULL /* not reading from stdin */) {
+        /* basename() is not portable */
+        char *sep = strrchr(srcfile, PATH_SEPERATOR);
+        if (sep) {
+            *sep = 0;
+        }
+        slidewd = srcfile;
     }
 
     readconfig();
@@ -319,6 +337,7 @@ int main(int argc, char **argv) {
 
 Slide parse_slide_from_file(FILE *in) {
     Slide slide = arrnew(Page);
+    size_t slidewdlen = slidewd ? strlen(slidewd) : 0;
     char buf[SSLIDE_BUFSIZE] = { 0 };
     while (true) {
         Page page = arrnew(Frame);
@@ -368,14 +387,25 @@ Slide parse_slide_from_file(FILE *in) {
                         fprintf(stderr, "Only one image per frame is allowed!");
                         exit(1);
                     }
-                    char *filename = buf+1;
-                    char *newline = strchr(filename, '\n');
+                    char *newline = strchr(buf, '\n');
                     if (newline != NULL) {
                         *newline = '\x0';
                     } else {
                         fprintf(stderr, "Error parsing");
                         exit(1);
                     }
+                    char *filename;
+                    if (finisstdin) {
+                        filename = buf+1;
+                    } else {
+                        filename = malloc(PATH_MAX);
+                        size_t basenamelen = strlen(buf+1);
+                        memcpy(filename, slidewd, slidewdlen);
+                        filename[slidewdlen] = PATH_SEPERATOR;
+                        memcpy(filename + slidewdlen + 1, buf+1, basenamelen);
+                        filename[slidewdlen + 1 + basenamelen] = '\x0';
+                    }
+                    
                     frame.type = FRAMEIMAGE;
                     frame.image.texture = IMG_LoadTexture(rend, filename);
                     if (frame.image.texture == NULL) {
@@ -412,7 +442,7 @@ Slide parse_slide_from_file(FILE *in) {
 }
 
 void readconfig() {
-    char configpath[4096] = { 0 };
+    char configpath[PATH_MAX] = { 0 };
     strcpy(configpath, gethomedir());
     strcat(configpath, "/.sslide.json");
     puts(configpath);
@@ -445,7 +475,7 @@ char *gethomedir() {
 #ifdef _WIN32
     ret = getenv("USERPROFILE");
     if (ret == NULL) {
-        ret = xcalloc(1, 4096);
+        ret = xcalloc(1, PATH_MAX);
         strcat(ret, getenv("HOMEDRIVE"));
         strcat(ret, getenv("HOMEPATH"));
     }
