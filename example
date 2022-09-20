@@ -1,0 +1,117 @@
+;f
+sslide
+
+@
+
+;f
+More simple, More powerful
+
+@
+
+;f
+Each page of slide contain arbitary number of frames
+
+@
+
+;f
+A frame might be "Image frame" or "Text Frame"
+
+@
+
+;f
+An Image frame can contain one image
+A text frame can contain one paragraph of text
+
+@
+
+;f
+Each frame must be given a "geometry"
+in format ;x;y;w;h 
+Every value is calculated in proportion to window size.
+
+@
+
+;f
+For example
+ ;10;20;30;30
+Mean "make a frame at 10% from the left
+20% from the top, 
+width and height = 30%"
+Or use ;f as shorthand for ;0;0;100;100
+
+@
+
+;0;10;100;30
+Example of multi-frame page
+
+;0;60;50;30
+Frame 2
+
+;50;60;50;30
+Frame 3
+
+@
+
+;f
+Each frame is strictly terminated by an empty line,
+so if you want to have empty line in your paragraph
+ 
+like this
+ 
+just make it a line with one space
+
+@
+
+;f
+Each page is terminated by a line starting with @
+This line is put at the end, not at the start of the page
+
+@
+
+;f
+Images
+
+@
+
+;0;0;100;50
+You can make an image frame by using % symbol, followed by file path
+such as %nyan.png
+ 
+Image will be automatically resized to respect original ratio, while
+fitting in the frame.
+
+;0;50;100;50
+%lena.jpeg
+
+@
+
+;0;0;100;50
+Chisato supremacy
+
+#image: only take in x,y,w
+#height of image will be calculated by ratio of original image
+;0;50;100;50
+%chisato.png
+
+;0;50;30;30
+Lycoreco
+
+@
+
+;f
+if you want to not respect original ratio, you can give height also
+#comment test
+
+;10;60;40;10
+%lena.jpeg
+
+@
+
+;0;0;100;50
+1. Yes
+
+;0;50;100;50
+2. Eighty other animes is mid
+3. ShinLena
+
+@
