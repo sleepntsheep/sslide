@@ -136,7 +136,7 @@ void init() {
         fprintf(stderr, "IMG_Init Failed: %s", IMG_GetError());
         exit(1);
     }
-    win = SDL_CreateWindow("Slide", 0, 0, w, h, SDL_WINDOW_RESIZABLE);
+    win = SDL_CreateWindow("Slide", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
     rend = SDL_CreateRenderer(win, -1, 0);
 }
 
@@ -174,7 +174,7 @@ void drawframe(Frame frame) {
         int yoffset = (frameh - theight) / 2;
 
         for (int i = 0; i < arrlen(frame.lines); i++) {
-            SDL_Surface *textsurface = TTF_RenderUTF8_Solid(fonts[fontsize],
+            SDL_Surface *textsurface = TTF_RenderUTF8_Blended(fonts[fontsize],
                     frame.lines[i], fg);
             SDL_Texture *texttexture = SDL_CreateTextureFromSurface(rend, textsurface);
             int linew, lineh;
@@ -277,6 +277,7 @@ void run() {
         if (redraw) {
             drawpage(slide[pagei]);
         }
+        SDL_Delay(15);
     }
 }
 
