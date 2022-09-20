@@ -24,6 +24,14 @@
 #define SHEEP_XMALLOC_IMPLEMENTATION
 #include "xmalloc.h"
 #include "config.h"
+#include "tinyfiledialogs.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <pwd.h>
+#endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -284,8 +292,23 @@ void run() {
 int main(int argc, char **argv) {
     FILE *fin = stdin;
     if (argc > 1) {
-        fin = fopen(argv[1], "r");
+        if (!strcmp(argv[1], "-")) {
+            fin = stdin;
+        } else {
+            fin = fopen(argv[1], "r");
+        }
+    } else {
+        const char *srcfilename = tinyfd_openFileDialog(
+                "Slide file",
+                gethomedir(),
+                0,
+                NULL,
+                NULL,
+                false
+                );
+        fin = fopen(srcfilename, "r");
     }
+
     readconfig();
     init();
     loadfonts();
@@ -427,8 +450,6 @@ char *gethomedir() {
         strcat(ret, getenv("HOMEPATH"));
     }
 #else
-#include <unistd.h>
-#include <pwd.h>
     ret = getenv("HOME");
     if (ret == NULL) {
         ret = getpwuid(getuid())->pw_dir;
