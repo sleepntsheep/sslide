@@ -9,8 +9,6 @@ project "sslide"
 
    files { "*.h", "*.c" }
 
-   links { "SDL2", "SDL2_ttf", "SDL2_image" }
-
    filter "configurations:Debug"
       defines { "DEBUG" }
       symbols "On"
@@ -24,4 +22,4 @@ project "sslide"
       defines { "main=SDL_main" }
       links { "SDL2main", "mingw32" }
 
-   
+   links { "SDL2", "SDL2_ttf", "SDL2_image" }
