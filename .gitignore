@@ -1,1 +1,6 @@
 sslide
+obj
+Debug
+Release
+sslide.make
+Makefile
