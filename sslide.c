@@ -362,13 +362,13 @@ Slide parse_slide_from_file(FILE *in) {
                     SDL_QueryTexture(frame.image.texture, NULL, NULL, &imgw, &imgh);
                     frame.image.ratio = (float)imgw / imgh;
                 } else if (buf[0] != '\n') {
-                    if (frame.type == FRAMEIMAGE) {
-                        fprintf(stderr, "Text and image in same frame is not allowed!");
-                        exit(1);
-                    }
                     if (buf[0] == '#') {
                         /* comment */
                         continue;
+                    }
+                    if (frame.type == FRAMEIMAGE) {
+                        fprintf(stderr, "Text and image in same frame is not allowed!");
+                        exit(1);
                     }
                     frame.type = FRAMETEXT;
                     int blen = strlen(buf);
