@@ -38,7 +38,6 @@ project "sslide"
       defines { "NDEBUG" }
       optimize "On"
       defines { "main=SDL_main" }
-      links { "mingw32", "SDL2main" }
-      links { "SDL2", "SDL2_ttf", "SDL2_image" }
+      links { "mingw32", "SDL2main", "SDL2", "SDL2_ttf", "SDL2_image", "comdlg32", "ole32" }
 
       
