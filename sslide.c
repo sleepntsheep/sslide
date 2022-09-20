@@ -406,7 +406,7 @@ Slide parse_slide_from_file(FILE *in) {
                         filename = malloc(PATH_MAX);
                         size_t basenamelen = strlen(buf+1);
                         memcpy(filename, slidewd, slidewdlen);
-                        filename[slidewdlen] = PATH_SEPERATOR;
+                        filename[slidewdlen] = '/';
                         memcpy(filename + slidewdlen + 1, buf+1, basenamelen);
                         filename[slidewdlen + 1 + basenamelen] = '\x0';
                     }
