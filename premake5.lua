@@ -1,6 +1,6 @@
 -- premake5.lua
 workspace "sslide"
-   configurations { "Debug", "Release" }
+   configurations { "Debug", "Release", "Mingw" }
 
 project "sslide"
    kind "ConsoleApp"
@@ -18,3 +18,10 @@ project "sslide"
    filter "configurations:Release"
       defines { "NDEBUG" }
       optimize "On"
+
+   filter "configurations:Mingw"
+      system "Windows"
+      defines { "main=SDL_main" }
+      links { "SDL2main", "mingw32" }
+
+   
