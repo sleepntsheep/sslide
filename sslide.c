@@ -28,11 +28,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#define PATH_SEPERATOR '\\'
 #else
 #include <unistd.h>
 #include <pwd.h>
-#define PATH_SEPERATOR '/'
 #endif
 
 #ifndef PATH_MAX
@@ -320,8 +318,15 @@ int main(int argc, char **argv) {
 
     if (srcfile != NULL /* not reading from stdin */) {
         /* basename() is not portable */
-        char *sep = strrchr(srcfile, PATH_SEPERATOR);
-        if (sep) {
+        char *sep = srcfile + strlen(srcfile);
+        while (sep > srcfile && 
+                *sep != '/'
+#ifdef _WIN32
+                && *sep != '\\'
+#endif
+              )
+            sep--;
+        if (sep > srcfile) {
             *sep = 0;
         }
         slidewd = srcfile;
