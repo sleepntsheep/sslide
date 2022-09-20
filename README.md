@@ -25,7 +25,7 @@ Install libsdl2, premake from msys' repository
 
 ```
 premake5 gmake2
-gmake2 config=mingw
+mingw32-make config=mingw
 ```
 
 #### Linux
@@ -34,7 +34,7 @@ Install libsdl2, premake from your distro's repository
 
 ```
 premake5 gmake2
-gmake2 config=release
+make config=release
 ```
 
 #### Visual Studio
