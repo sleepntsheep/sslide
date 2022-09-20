@@ -2,6 +2,20 @@
 workspace "sslide"
    configurations { "Debug", "Release", "Mingw" }
 
+newaction {
+   trigger     = "clean",
+   description = "clean the software",
+   execute     = function ()
+      print("clean the build...")
+      os.rmdir("./build")
+      os.rmdir("Debug")
+      os.rmdir("Release")
+      os.rmdir("Mingw")
+      os.rmdir("Obj")
+      print("done.")
+   end
+}
+
 project "sslide"
    kind "ConsoleApp"
    language "C"
@@ -12,10 +26,12 @@ project "sslide"
    filter "configurations:Debug"
       defines { "DEBUG" }
       symbols "On"
+      links { "SDL2", "SDL2_ttf", "SDL2_image" }
 
    filter "configurations:Release"
       defines { "NDEBUG" }
       optimize "On"
+      links { "SDL2", "SDL2_ttf", "SDL2_image" }
 
    filter "configurations:Mingw"
       system "Windows"
@@ -23,5 +39,6 @@ project "sslide"
       optimize "On"
       defines { "main=SDL_main" }
       links { "mingw32", "SDL2main" }
+      links { "SDL2", "SDL2_ttf", "SDL2_image" }
 
-   links { "SDL2", "SDL2_ttf", "SDL2_image" }
+      

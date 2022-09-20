@@ -405,8 +405,10 @@ void readconfig() {
     if (json == NULL) goto bad;
     if (json->type != SJSON_OBJECT) goto bad;
     sjson *fontpathjson = sjson_object_get(json, "fontpath");
-    if (fontpathjson->type != SJSON_STRING) goto bad;
-    fontpath = fontpathjson->v.str;
+    if (fontpathjson != NULL)  {
+        if (fontpathjson->type != SJSON_STRING) goto bad;
+        fontpath = fontpathjson->v.str;
+    }
     sjson_free(json);
     free(content);
     return;
