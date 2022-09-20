@@ -16,7 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "font.h"
+#include "unifont.h"
 #define SHEEP_DYNARRAY_IMPLEMENTATION
 #include "dynarray.h"
 #define SHEEP_SJSON_IMPLEMENTATION
@@ -82,7 +82,7 @@ char *gethomedir();
 
 void loadfonts() {
     if (fontpath == NULL) {
-        fontrw = SDL_RWFromMem(font_uint8, font_uint8_len);
+        fontrw = SDL_RWFromMem(unifont_ttf, unifont_ttf_len);
         if (fontrw == NULL) {
             fprintf(stderr, "FontRwop: %s\n", SDL_GetError());
         }
