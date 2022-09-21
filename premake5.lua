@@ -17,10 +17,20 @@ newaction {
     end
 }
 
+newoption {
+    trigger = "sanitize",
+    description = "enable sanitizers"
+}
+
 project "sslide"
 kind "ConsoleApp"
 language "C"
 targetdir "%{cfg.buildcfg}"
+
+if _OPTIONS["sanitize"] then
+    buildoptions { "-fsanitize=address", "-fsanitize=undefined" }
+    linkoptions { "-fsanitize=address", "-fsanitize=undefined" }
+end
 
 files { "*.h", "*.c" }
 
@@ -34,17 +44,14 @@ filter "configurations:Mingw"
 filter "configurations:Debug"
     defines { "DEBUG" }
     symbols "On"
-    defines { "USE_UNIFONT" }
 
 filter "configurations:Release"
     defines { "NDEBUG" }
     optimize "On"
-    defines { "USE_UNIFONT" }
-
-filter {}
-    links { "SDL2", "SDL2_ttf", "SDL2_image" }
 
 filter "configurations:MinimalFont"
-    defines { "USE_UNIFONT=0" }
 
+filter {}
+    buildoptions { "-std=c99", "-Wall", "-Wextra", "-pedantic" }
+    links { "SDL2", "SDL2_ttf", "SDL2_image" }
 

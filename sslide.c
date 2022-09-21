@@ -124,7 +124,7 @@ int getfontsize(Frame frame, int *width, int *height) {
     }
     int longesti = 0;
     int longestw = 0;
-    for (int i = 0; i < arrlen(frame.lines); i++) {
+    for (size_t i = 0; i < arrlen(frame.lines); i++) {
         int linew, _h;
         TTF_SizeUTF8(fonts[result], frame.lines[i], &linew, &_h);
         if (linew > longestw) {
@@ -169,6 +169,8 @@ void cleanup() {
         for (size_t j = 0; j < arrlen(slide[i]); j++) {
             if (slide[i][j].type == FRAMEIMAGE) {
                 SDL_DestroyTexture(slide[i][j].image.texture);
+            } else {
+                arrfree(slide[i][j].lines);
             }
         }
         arrfree(slide[i]);
@@ -191,7 +193,7 @@ void drawframe(Frame frame) {
         int xoffset = (framew - twidth) / 2;
         int yoffset = (frameh - theight) / 2;
 
-        for (int i = 0; i < arrlen(frame.lines); i++) {
+        for (size_t i = 0; i < arrlen(frame.lines); i++) {
             SDL_Surface *textsurface = TTF_RenderUTF8_Blended(fonts[fontsize],
                     frame.lines[i], fg);
             SDL_Texture *texttexture = SDL_CreateTextureFromSurface(rend, textsurface);
@@ -269,9 +271,18 @@ void run() {
                                 redraw = true;
                             }
                             break;
+                        case SDLK_u:
+                            pagei = 0;
+                            redraw = true;
+                            break;
+                        case SDLK_d:
+                            pagei = arrlen(slide) - 1;
+                            redraw = true;
+                            break;
                         default:
                             break;
                     }
+                    break;
                 case SDL_WINDOWEVENT:
                     switch (event.window.event) {
                         case SDL_WINDOWEVENT_RESIZED:
@@ -287,6 +298,7 @@ void run() {
                         default:
                             break;
                     }
+                    break;
                 default:
                     break;
             }
@@ -350,9 +362,7 @@ Slide parse_slide_from_file(FILE *in) {
     while (true) {
         Page page = arrnew(Frame);
         while (true) {
-            Frame frame = {
-                .lines = arrnew(char*),
-            };
+            Frame frame = {0};
             char *ret;
 
             /* clear empty lines */
@@ -367,6 +377,8 @@ Slide parse_slide_from_file(FILE *in) {
                     fprintf(stderr, "Error parsing: Slide has no page, make sure every page is terminated");
                     exit(1);
                 }
+                /* didn't add page to slide, must free now to prevent memory leak */
+                arrfree(page);
                 return slide;
             }
 
@@ -381,14 +393,10 @@ Slide parse_slide_from_file(FILE *in) {
             if (buf[1] == 'f') {
                 frame.x = frame.y = 0;
                 frame.w = frame.h = 100;
-            } else {
-                int ret;
-                ret = sscanf(buf, ";%d;%d;%d;%d", &frame.x, &frame.y, &frame.w, &frame.h);
-                if (ret != 4) {
-                    fprintf(stderr, "Wrong slide format: Geometry need to be in ;x;y;w;h");
-                    exit(1);
-                }
-            }
+            } else if (sscanf(buf, ";%d;%d;%d;%d", &frame.x, &frame.y, &frame.w, &frame.h) != 4) {
+				fprintf(stderr, "Wrong slide format: Geometry need to be in ;x;y;w;h");
+				exit(1);
+			}
 
             while (fgets(buf, sizeof buf, in) != NULL /* EOF */) {
                 if (buf[0] == '%') {
@@ -403,7 +411,7 @@ Slide parse_slide_from_file(FILE *in) {
                         fprintf(stderr, "Error parsing");
                         exit(1);
                     }
-                    char *filename;
+                    char filename[PATH_MAX] = { 0 };
                     if (in == stdin
 #ifndef _WIN32 /* path beginning with root is absolute path */
                             || buf[1] == '/'
@@ -411,9 +419,8 @@ Slide parse_slide_from_file(FILE *in) {
                             || !PathIsRelative(buf+1)
 #endif
                             ) {
-                        filename = buf+1;
+                        strcpy(filename, buf+1);
                     } else {
-                        filename = malloc(PATH_MAX);
                         size_t basenamelen = strlen(buf+1);
                         memcpy(filename, slidewd, slidewdlen);
                         filename[slidewdlen] = '/';
@@ -431,6 +438,9 @@ Slide parse_slide_from_file(FILE *in) {
                     SDL_QueryTexture(frame.image.texture, NULL, NULL, &imgw, &imgh);
                     frame.image.ratio = (float)imgw / imgh;
                 } else if (buf[0] != '\n') {
+                    if (frame.lines == NULL) {
+                        frame.lines = arrnew(char*);
+                    }
                     if (buf[0] == '#') {
                         /* comment */
                         continue;
