@@ -22,6 +22,8 @@
 #ifndef NO_JSON_CONFIG
 #define SHEEP_SJSON_IMPLEMENTATION
 #include "sjson.h"
+#define SHEEP_LOG_IMPLEMENTATION
+#include "log.h"
 #endif
 #define SHEEP_XMALLOC_IMPLEMENTATION
 #include "xmalloc.h"
@@ -513,17 +515,19 @@ void readconfig() {
     fread(content, 1, fsize, configfile);
     content[fsize] = '\x0';
     fclose(configfile);
-    sjson *json = sjson_serialize(content, fsize);
-    if (json == NULL) goto bad;
-    if (json->type != SJSON_OBJECT) goto bad;
-    sjson *fontpathjson = sjson_object_get(json, "fontpath");
-    if (fontpathjson != NULL)  {
-        if (fontpathjson->type != SJSON_STRING) goto bad;
-        fontpath = fontpathjson->v.str;
+    sjson_result sj = sjson_deserialize(content, fsize);
+    if (sj.err) goto bad;
+    if (sj.json->type != SJSON_OBJECT) goto bad;
+    sjson_result fontpathjson = sjson_object_get(sj.json, "fontpath");
+    if (!fontpathjson.err)  {
+        if (fontpathjson.json->type == SJSON_STRING) {
+            fontpath = fontpathjson.json->v.str;
+        }
     }
-    sjson_free(json);
+    sjson_free(sj.json);
     free(content);
 bad:
+    warn("Failed reading json config");
     return;
 }
 #endif
