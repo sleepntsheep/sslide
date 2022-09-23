@@ -30,7 +30,7 @@
 #include "config.h"
 #include "tinyfiledialogs.h"
 
-#ifndef NO_UNIFONT
+#ifdef USE_UNIFONT
 #include "unifont.h"
 #else
 #include "font.h"

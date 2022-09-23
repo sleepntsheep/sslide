@@ -17,6 +17,14 @@ newaction {
     end
 }
 
+newaction {
+    trigger = "install",
+    description = "install to path",
+    execute = function ()
+        os.copyfile("./Release/sslide", "/usr/local/bin")
+    end
+}
+
 newoption {
     trigger = "sanitize",
     description = "enable sanitizers"
@@ -35,23 +43,23 @@ end
 files { "*.h", "*.c" }
 
 filter "configurations:Mingw"
-    system "Windows"
-    defines { "NDEBUG" }
-    optimize "On"
-    defines { "main=SDL_main" }
-    links { "mingw32", "SDL2main", "comdlg32", "ole32" }
+system "Windows"
+defines { "NDEBUG" }
+optimize "On"
+defines { "main=SDL_main" }
+links { "mingw32", "SDL2main", "comdlg32", "ole32" }
 
 filter "configurations:Debug"
-    defines { "DEBUG" }
-    symbols "On"
+defines { "DEBUG" }
+symbols "On"
 
 filter "configurations:Release"
-    defines { "NDEBUG" }
-    optimize "On"
+defines { "NDEBUG" }
+optimize "On"
 
 filter "configurations:MinimalFont"
 
 filter {}
-    buildoptions { "-std=c17", "-Wall", "-Wextra", "-pedantic" }
-    links { "SDL2", "SDL2_ttf", "SDL2_image" }
+buildoptions { "-std=c17", "-Wall", "-Wextra", "-pedantic" }
+links { "SDL2", "SDL2_ttf", "SDL2_image" }
 
