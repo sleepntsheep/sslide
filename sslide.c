@@ -144,7 +144,7 @@ int getfontsize(Frame frame, int *width, int *height) {
     }
     int longesti = 0;
     int longestw = 0;
-    for (size_t i = 0; i < arrlen(frame.lines); i++) {
+    for (long i = 0; i < arrlen(frame.lines); i++) {
         int linew, _h;
         TTF_SizeUTF8(fonts[result], frame.lines[i], &linew, &_h);
         if (linew > longestw) {
@@ -184,8 +184,8 @@ void cleanup() {
     for (int i = 1; i <= FONT_NSCALES; i++) {
         TTF_CloseFont(fonts[i]);
     }
-    for (size_t i = 0; i < arrlen(slide); i++) {
-        for (size_t j = 0; j < arrlen(slide[i]); j++) {
+    for (long i = 0; i < arrlen(slide); i++) {
+        for (long j = 0; j < arrlen(slide[i]); j++) {
             if (slide[i][j].type == FRAMEIMAGE) {
                 SDL_DestroyTexture(slide[i][j].image.texture);
             } else {
@@ -212,7 +212,7 @@ void drawframe(Frame frame) {
         int xoffset = (framew - twidth) / 2;
         int yoffset = (frameh - theight) / 2;
 
-        for (size_t i = 0; i < arrlen(frame.lines); i++) {
+        for (long i = 0; i < arrlen(frame.lines); i++) {
             SDL_Surface *textsurface = TTF_RenderUTF8_Blended(fonts[fontsize],
                     frame.lines[i], invert ? bg : fg);
             SDL_Texture *texttexture = SDL_CreateTextureFromSurface(rend, textsurface);
@@ -255,7 +255,7 @@ void drawpage(Page page) {
     SDL_Color realbg = invert ? fg : bg;
     SDL_SetRenderDrawColor(rend, realbg.r, realbg.g, realbg.b, realbg.a);
     SDL_RenderClear(rend);
-    for (size_t i = 0; i < arrlen(page); i++) {
+    for (long i = 0; i < arrlen(page); i++) {
         drawframe(page[i]);
     }
 }
@@ -273,7 +273,7 @@ void drawprogressbar(float progress /* value between 0 and 1 */) {
 }
 
 void run() {
-    size_t pagei = 0;
+    long pagei = 0;
     SDL_Event event;
 
     while (true) {
@@ -399,11 +399,11 @@ int main(int argc, char **argv) {
 }
 
 Slide parse_slide_from_file(FILE *in) {
-    Slide slide = arrnew(Page);
-    size_t slidewdlen = slidewd ? strlen(slidewd) : 0;
+    Slide slide = arrnew;
+    long slidewdlen = slidewd ? strlen(slidewd) : 0;
     char buf[SSLIDE_BUFSIZE] = { 0 };
     while (true) {
-        Page page = arrnew(Frame);
+        Page page = arrnew;
         while (true) {
             Frame frame = {0};
             char *ret;
@@ -459,7 +459,7 @@ Slide parse_slide_from_file(FILE *in) {
                             ) {
                         strcpy(filename, buf+1);
                     } else {
-                        size_t basenamelen = strlen(buf+1);
+                        long basenamelen = strlen(buf+1);
                         memcpy(filename, slidewd, slidewdlen);
                         filename[slidewdlen] = '/';
                         memcpy(filename + slidewdlen + 1, buf+1, basenamelen);
@@ -475,9 +475,6 @@ Slide parse_slide_from_file(FILE *in) {
                     SDL_QueryTexture(frame.image.texture, NULL, NULL, &imgw, &imgh);
                     frame.image.ratio = (float)imgw / imgh;
                 } else if (buf[0] != '\n') {
-                    if (frame.lines == NULL) {
-                        frame.lines = arrnew(char*);
-                    }
                     if (buf[0] == '#') {
                         /* comment */
                         continue;
@@ -509,7 +506,7 @@ void readconfig() {
     strcat(configpath, "/.sslide.json");
     FILE *configfile = fopen(configpath, "ab+");
     fseek(configfile, 0L, SEEK_END);
-    size_t fsize = ftell(configfile);
+    long fsize = ftell(configfile);
     fseek(configfile, 0L, SEEK_SET);
     char *content = xmalloc(fsize+1);
     fread(content, 1, fsize, configfile);

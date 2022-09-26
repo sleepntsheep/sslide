@@ -1,4 +1,8 @@
-/* dynarray.h - v0.02 - sleepntsheep 2022
+/**
+ * @file dynarray.h
+ * @brief Generic dynamic array
+ */
+/* dynarray.h - v0.03 - sleepntsheep 2022
  * dynarray.h is single-header library for
  * nice dynamic array in C, similar to 
  * std::vector in C++ 
@@ -12,19 +16,18 @@
  *      T* arr = dynarray_new(T);
  *      dynarray_push(arr, X);
  *
- * If you want to use long 
- * dynarray_fnc instead of arrfnc
- * you can define SHEEP_DYNARRAY_NOSHORTHAND
+ * If you don't want arrfnc shorthand
+ * to dynarray_fnc then define SHEEP_DYNARRAY_NOSHORTHAND
  * to avoid name collision
  *
  * If you want to use custom alloactor,
- * define malloc and realloc to them
+ * define DYNARRAY_MALLOC and DYNARRAY_REALLOC to them
  * before including dynarray.h
  *
  * How it works
  *
- * Similar to stb_ds.h, this allocate extra memory for
- * type dynarray_info_t in front of the array which 
+ * Similar to stb_ds.h, this allocates extra memory for
+ * type struct _dynarray_info in front of the array which 
  * act as a header that store information about the array,
  * specifically length, capacity, membsize.
  *
@@ -41,7 +44,7 @@
  * Notes :
  *  Due to limitation of the C language, 
  *  almost all macros here are not type-safe
- *  this is a hacky solution for dynamic array
+ *  this is a hacky solution for dynamic array,
  *  but it provide nicer interface than other approach
  *  for example arr[i] rather than vec_at(arr, i)
  *  moreover it can be used for any type
@@ -61,7 +64,7 @@
  *  arrpop(A) :
  *      remove last element of array A and return it
  *
- *  arrtop(A) :
+ *  arrback(A) :
  *      return last element of array, without removing it
  *
  *  arrlen(A) :
@@ -91,7 +94,7 @@
  *
  * arrsort *won't* be implemented, just use qsort from stdlib
  * this library *cannot* be used in C++,
- * due to C++ not allowing C++ not allowing implicit pointer conversion
+ * due to C++ not allowing implicit pointer conversion
  * you shouldn't use this in C++ anyway, use std::vector
  * */
 
@@ -100,15 +103,26 @@
 #ifndef SHEEP_DYNARRAY_H
 #define SHEEP_DYNARRAY_H
 
-#include <string.h>
-#include <stddef.h>
+#ifndef DYNARRAY_REALLOC
 #include <stdlib.h>
+#define DYNARRAY_REALLOC realloc
+#endif  /* DYNARRAY_REALLOC */
 
-typedef struct dynarray_info_s {
-    size_t length;
-    size_t capacity;
-    size_t membsize;
-} dynarray_info_t;
+#ifndef DYNARRAY_MALLOC
+#include <stdlib.h>
+#define DYNARRAY_MALLOC malloc
+#endif  /* DYNARRAY_MALLOC */
+
+#ifndef DYNARRAY_FREE
+#include <stdlib.h>
+#define DYNARRAY_FREE free
+#endif  /* DYNARRAY_FREE */
+
+
+struct _dynarray_info {
+    long length; /* dynamic array length */
+    long capacity; /* dynamic array capacity */
+};
 
 #define DYNARRAY_MIN_CAPACITY 4
 
@@ -120,7 +134,7 @@ typedef struct dynarray_info_s {
 #define arrcap dynarray_cap
 #define arrdel dynarray_del
 #define arrpop dynarray_pop
-#define arrtop dynarray_top
+#define arrback dynarray_back
 #define arrpush dynarray_push
 #define arrsetlen dynarray_setlen
 #define arrsetcap dynarray_setcap
@@ -128,114 +142,107 @@ typedef struct dynarray_info_s {
 
 #endif /* SHEEP_DYNARRAY_NOSHORTHAND */
 
-#define dynarray_info(A) (((dynarray_info_t*)(A))-1)
-#define dynarray_new(T) ((T*)(_dynarray_new(sizeof(T))))
-#define dynarray_pop _dynarray_pop
-#define dynarray_top _dynarray_top
-#define dynarray_push _dynarray_push
-#define dynarray_ins _dynarray_ins
+static void *dynarray_growf(void *a, long cap, long membsize);
+static long dynarray_first_2n_bigger_than(long x);
 
-void   dynarray_del(void* a, size_t idx);
-void   dynarray_free(void* a);
-size_t dynarray_len(void* a);
-size_t dynarray_cap(void* a);
-size_t dynarray_membsize(void *a);
-void   dynarray_setlen(void* a, size_t len);
-void  *dynarray_setcap(void* a, size_t cpa);
-void  *_dynarray_new(size_t membsize);
-void  *dynarray_ensure_empty(void* a, size_t n);
-
+/**
+ * @brief NULL, this is to make code more clear that the pointer is dynamic array
+ */
+#define dynarray_new ((void*)0)
+/**
+ * @brief if space is not enough for adding n more new elements, grow array to smallest power of two that fit
+ */
+#define dynarray_ensure_empty(A, n) (dynarray_setcap((A), dynarray_first_2n_bigger_than(dynarray_len(A) + (n))))
+/**
+ * @brief private: get pointer to information about dynamic array
+ */
+#define dynarray_info(A) (((struct _dynarray_info*)(A))-1)
+/**
+ * @brief get last element of array
+ */
+#define dynarray_back(A) ((A)[dynarray_info(A)->length-1])
+/**
+ * @brief pop last element of array 
+ */
+#define dynarray_pop(A) ((A)[--dynarray_info(A)->length])
+/**
+ * @brief push element to end of array
+ */
+#define dynarray_push(A,x) \
+    do { \
+        (A) = dynarray_ensure_empty((A), 1); \
+        (A)[dynarray_len(A)] = (x); \
+        dynarray_info(A)->length++; \
+    } while(0)
+/**
+ * @brief insert element to index idx of array, moving other elements to the right if needed
+ */
+#define dynarray_ins(A,idx,x) \
+    do { \
+        (A) = dynarray_ensure_empty((A), 1); \
+        for (long i = idx; i <= dynarray_len(A); i++) \
+            (A)[i+1] = (A)[i]; \
+        (A)[idx] = (x); \
+        dynarray_info(A)->length++; \
+    } while(0)
+/**
+ * @brief delete element at index idx from array, moving all latter element to the left
+ */
+#define dynarray_del(A,idx) \
+    do { \
+        for (long i = idx; i < dynarray_len(A) - 1; i++) \
+            A[i] = A[i+1]; \
+        dynarray_info(A)->length--; \
+    } while(0)
+/**
+ * @brief free dynamic array
+ */
+#define dynarray_free(A) do { \
+                            if (A) DYNARRAY_FREE(dynarray_info(A)); \
+                        } while(0)
+/**
+ * @brief return length of dynamic array
+ */
+#define dynarray_len(A) ((A) ? dynarray_info(A)->length : 0)
+/**
+ * @brief return capacity of dynamic array
+ */
+#define dynarray_cap(A) ((A) ? dynarray_info(A)->capacity : DYNARRAY_MIN_CAPACITY)
+/**
+ * @brief set capacity of dynamic array to n, realloc if needed
+ */
+#define dynarray_setcap(A, n) dynarray_growf((A), (n), sizeof(*(A)))
+/**
+ * @brief set length of dynamic array to n, set capacity if needed
+ */
+#define dynarray_setlen(A, n) ((A) = dynarray_setcap((A), (n)), dynarray_info(A)->length = (n), (A))
 
 #endif /* SHEEP_DYNARRAY_H */
 
 #ifdef SHEEP_DYNARRAY_IMPLEMENTATION 
 
-#define _dynarray_top(A) \
-    (A)[dynarray_info(A)->length-1]
-
-#define _dynarray_pop(A) \
-    (A)[--dynarray_info(A)->length]
-
-#define _dynarray_push(A,x) \
-    do { \
-        A = dynarray_ensure_empty((A), 1); \
-        (A)[arrlen(A)] = (x); \
-        dynarray_info(A)->length++; \
-    } while(0)
-
-#define _dynarray_ins(A,idx,x) \
-    do { \
-        A = dynarray_ensure_empty((A), 1); \
-        /* pointer arithmetic already multiply idx with membsize for us in dest and src */ \
-        memmove((A) + (idx+1), \
-                (A) + (idx), \
-                (dynarray_len(A) - idx) * dynarray_membsize(A)); \
-        A[idx] = (x); \
-        dynarray_info(A)->length++; \
-    } while(0)
-
-void *dynarray_ensure_empty(void* a, size_t n) {
-    /* make sure space is empty enough for at least n more member */
-    size_t cap = dynarray_cap(a);
-    while (cap - dynarray_len(a) < n)
-        cap *= 2;
-    return dynarray_setcap(a, cap);
-}
-
-void dynarray_del(void* a, size_t idx) {
-    dynarray_info_t *info = dynarray_info(a);
-    memmove((char*)a + (idx)   * info->membsize,
-            (char*)a + (idx+1) * info->membsize,
-            (info->length - idx - 1) * info->membsize);
-    info->length--;
-}
-
-void dynarray_free(void* a) {
-    /* free dynamic array */
-    free(dynarray_info(a));
-}
-
-size_t dynarray_len(void* a) {
-    /* return length */
-    return dynarray_info(a)->length;
-}
-
-size_t dynarray_membsize(void *a) {
-    return dynarray_info(a)->membsize;
-}
-
-size_t dynarray_cap(void* a) {
-    /* return capacity */
-    return dynarray_info(a)->capacity;
-}
-
-void dynarray_setlen(void* a, size_t len) {
-    /* change length of array to len,
-     * allocating additional memory if necessery */
-    dynarray_setcap(a, len);
-    dynarray_info(a)->length = len;
-}
-
-void* dynarray_setcap(void* a, size_t cap) {
-    /* simply ensure array have capacity of 
-     * at least cap */
+static void *dynarray_growf(void *a, long cap, long membsize) {
+    if (!a) {
+        a = ((struct _dynarray_info*)
+                DYNARRAY_MALLOC(sizeof(struct _dynarray_info)
+                    + membsize * DYNARRAY_MIN_CAPACITY))+1;
+        dynarray_info(a)->capacity = DYNARRAY_MIN_CAPACITY;
+        dynarray_info(a)->length = 0;
+    }
     if (cap <= dynarray_cap(a))
         return a;
-    void *b = ((dynarray_info_t*)
-            realloc(dynarray_info(a), sizeof(dynarray_info_t) +
-            cap * dynarray_membsize(a)))+1;
+    void *b;
+    b = ((struct _dynarray_info*)
+            DYNARRAY_REALLOC(dynarray_info(a), sizeof(struct _dynarray_info) + cap * membsize))+1;
     dynarray_info(b)->capacity = cap;
     return b;
 }
 
-void* _dynarray_new(size_t membsize) {
-    /* initialize a new dynarray */
-    dynarray_info_t* a;
-    a = malloc(sizeof(dynarray_info_t) + membsize * DYNARRAY_MIN_CAPACITY);
-    a->length = 0;
-    a->capacity = 4; //DYNARRAY_MIN_CAPACITY;
-    a->membsize = membsize;
-    return a+1;
+static long dynarray_first_2n_bigger_than(long x) {
+    long ret = 1;
+    while (ret < x)
+        ret <<= 1;
+    return ret;
 }
 
 #endif /* SHEEP_DYNARRAY_IMPLEMENTATION */
