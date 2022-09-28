@@ -77,22 +77,22 @@ static const char *sjson_tokennames[] = { SJSON_TOKENS_LIST };
 typedef enum sjson_resultnum sjson_resultnum;
 
 typedef struct sjsonbuf {
-	size_t len, cap;
-	char *buf;
+    size_t len, cap;
+    char *buf;
 } sjsonbuf;
 
 typedef struct sjson {
     int type;
-	struct {
-		double num;
-		char *str;
-		struct sjson *child;
-		struct sjson *tail;
-	} v;
-	/* for array & object child */
+    struct {
+    double num;
+    char *str;
+    struct sjson *child;
+    struct sjson *tail;
+    } v;
+    /* for array & object child */
     struct sjson *next;
     struct sjson *prev;
-	/* for object child */
+    /* for object child */
     char *key;
 } sjson;
 
@@ -114,9 +114,9 @@ typedef struct sjsontokarr {
 } sjsontokarr;
 
 typedef struct sjsonlexer {
-	char *start, *end;
-	char *c;
-	sjsontokarr toks;
+    char *start, *end;
+    char *c;
+    sjsontokarr toks;
 } sjsonlexer;
 
 typedef struct sjsonparser {
@@ -697,7 +697,7 @@ sjsonbuf sjson_serialize(sjson *json) {
     switch (json->type) {
         case SJSON_NUMBER:
         {
-			char buf[1024];
+    char buf[1024];
             size_t len = snprintf(buf, sizeof buf, "%lf", json->v.num);
             sjsonbuf_push(&s, buf, len);
             break;

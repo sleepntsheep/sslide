@@ -2,6 +2,10 @@
  *
  * I am ashamed for extensive use of global variable here, forgive me
  *
+ * TODO
+ *   - fallback font support, maybe with fontconfig
+ *     not sure how scaling would work since different fonts
+ *     have different sizes
  */
 
 #include <SDL2/SDL.h>
@@ -13,10 +17,10 @@
 #include <SDL2/SDL_video.h>
 
 #include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #define SHEEP_DYNARRAY_IMPLEMENTATION
 #include "dynarray.h"
 #ifndef NO_JSON_CONFIG
@@ -26,9 +30,9 @@
 #include "log.h"
 #endif
 #define SHEEP_XMALLOC_IMPLEMENTATION
-#include "xmalloc.h"
 #include "config.h"
 #include "tinyfiledialogs.h"
+#include "xmalloc.h"
 
 #ifdef USE_UNIFONT
 #include "unifont.h"
@@ -37,29 +41,19 @@
 #endif
 
 #ifdef _WIN32
-#include <windows.h>
+/* needed for tinyfiledialog and PathIsRelative */
 #include <shlwapi.h>
+#include <windows.h>
 #else
-#include <unistd.h>
+/* needed for getting home directory (getpwuid)
+   in case $HOME isn't set */
 #include <pwd.h>
+#include <unistd.h>
 #endif
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
-
-#define die(...) _die(__LINE__, __VA_ARGS__)
-
-static void _die(int line_number, const char * format, ...)
-{
-    fprintf(stderr, "%d: ", line_number);
-    va_list vargs;
-    va_start (vargs, format);
-    vfprintf(stderr, format, vargs);
-    va_end (vargs);
-    fprintf(stderr, "\n");
-    abort();
-}
 
 enum FrameType {
     FRAMETEXT,
@@ -76,18 +70,18 @@ typedef struct {
     int type;
     Image image;
     char **lines;
-    int x,y,w,h;
+    int x, y, w, h;
 } Frame;
 
-typedef Frame* Page;
-typedef Page*  Slide;
+typedef Frame *Page;
+typedef Page *Slide;
 
 static int w, h;
 static SDL_RWops *fontrw;
 static SDL_Window *win;
 static SDL_Renderer *rend;
-static TTF_Font *fonts[FONT_NSCALES+1];
-static int fontsheight[FONT_NSCALES+1];
+static TTF_Font *fonts[FONT_NSCALES + 1];
+static int fontsheight[FONT_NSCALES + 1];
 static const int linespacing = 3;
 static Slide slide;
 static char *fontpath = NULL;
@@ -114,7 +108,7 @@ void loadfonts() {
     if (fontpath == NULL) {
         fontrw = SDL_RWFromMem(font_ttf, font_ttf_len);
         if (fontrw == NULL) {
-            die("FontRwop: %s", SDL_GetError());
+            panic("FontRwop: %s", SDL_GetError());
         }
     }
     for (int i = 1; i <= FONT_NSCALES; i++) {
@@ -125,7 +119,8 @@ void loadfonts() {
             fonts[i] = TTF_OpenFont(fontpath, i * FONT_STEP);
         }
         if (fonts[i] == NULL) {
-            fprintf(stderr, "Open Font fail (size: %d): %s\n", i, SDL_GetError());
+            fprintf(stderr, "Open Font fail (size: %d): %s\n", i,
+                    SDL_GetError());
         }
         fontsheight[i] = TTF_FontHeight(fonts[i]);
     }
@@ -170,10 +165,12 @@ void init() {
     h = 600;
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
-    if (IMG_Init(IMG_INIT_AVIF | IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) < 1) {
-        die("Img_INIT: %s", IMG_GetError());
+    if (IMG_Init(IMG_INIT_AVIF | IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) <
+        1) {
+        panic("Img_INIT: %s", IMG_GetError());
     }
-    win = SDL_CreateWindow("Slide", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
+    win = SDL_CreateWindow("Slide", SDL_WINDOWPOS_CENTERED,
+                           SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
     rend = SDL_CreateRenderer(win, -1, 0);
 }
 
@@ -213,9 +210,10 @@ void drawframe(Frame frame) {
         int yoffset = (frameh - theight) / 2;
 
         for (long i = 0; i < arrlen(frame.lines); i++) {
-            SDL_Surface *textsurface = TTF_RenderUTF8_Blended(fonts[fontsize],
-                    frame.lines[i], invert ? bg : fg);
-            SDL_Texture *texttexture = SDL_CreateTextureFromSurface(rend, textsurface);
+            SDL_Surface *textsurface = TTF_RenderUTF8_Blended(
+                fonts[fontsize], frame.lines[i], invert ? bg : fg);
+            SDL_Texture *texttexture =
+                SDL_CreateTextureFromSurface(rend, textsurface);
             int linew, lineh;
             SDL_QueryTexture(texttexture, NULL, NULL, &linew, &lineh);
             SDL_Rect bound = {
@@ -281,71 +279,71 @@ void run() {
         /* event loop */
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
-                case SDL_QUIT:
-                    exit(0);
-                case SDL_KEYDOWN:
-                    switch (event.key.keysym.sym) {
-                        case SDLK_UP: /* FALLTHROUGH */
-                        case SDLK_LEFT:
-                        case SDLK_k:
-                            if (pagei > 0) {
-                                pagei--;
-                                redraw = true;
-                            }
-                            break;
-                        case SDLK_DOWN: /* FALLTHROUGH */
-                        case SDLK_RIGHT:
-                        case SDLK_j:
-                            if (pagei < arrlen(slide) - 1) {
-                                pagei++;
-                                redraw = true;
-                            }
-                            break;
-                        case SDLK_u:
-                            pagei = 0;
-                            redraw = true;
-                            break;
-                        case SDLK_d:
-                            pagei = arrlen(slide) - 1;
-                            redraw = true;
-                            break;
-                        case SDLK_i:
-                            invert ^= true;
-                            redraw = true;
-                            break;
-                        case SDLK_p:
-                            progressbar ^= true;
-                            redraw = true;
-                            break;
-                        default:
-                            break;
+            case SDL_QUIT:
+                exit(0);
+            case SDL_KEYDOWN:
+                switch (event.key.keysym.sym) {
+                case SDLK_UP: /* FALLTHROUGH */
+                case SDLK_LEFT:
+                case SDLK_k:
+                    if (pagei > 0) {
+                        pagei--;
+                        redraw = true;
                     }
                     break;
-                case SDL_WINDOWEVENT:
-                    switch (event.window.event) {
-                        case SDL_WINDOWEVENT_RESIZED:
-                        case SDL_WINDOWEVENT_SIZE_CHANGED:
-                        case SDL_WINDOWEVENT_MAXIMIZED:
-                            SDL_GetRendererOutputSize(rend, &w, &h);
-                            redraw = true;
-                            break;
-                        case SDL_WINDOWEVENT_MOVED:
-                        case SDL_WINDOWEVENT_EXPOSED:
-                            redraw = true;
-                            break;
-                        default:
-                            break;
+                case SDLK_DOWN: /* FALLTHROUGH */
+                case SDLK_RIGHT:
+                case SDLK_j:
+                    if (pagei < arrlen(slide) - 1) {
+                        pagei++;
+                        redraw = true;
                     }
+                    break;
+                case SDLK_u:
+                    pagei = 0;
+                    redraw = true;
+                    break;
+                case SDLK_d:
+                    pagei = arrlen(slide) - 1;
+                    redraw = true;
+                    break;
+                case SDLK_i:
+                    invert ^= true;
+                    redraw = true;
+                    break;
+                case SDLK_p:
+                    progressbar ^= true;
+                    redraw = true;
                     break;
                 default:
                     break;
+                }
+                break;
+            case SDL_WINDOWEVENT:
+                switch (event.window.event) {
+                case SDL_WINDOWEVENT_RESIZED:
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                case SDL_WINDOWEVENT_MAXIMIZED:
+                    SDL_GetRendererOutputSize(rend, &w, &h);
+                    redraw = true;
+                    break;
+                case SDL_WINDOWEVENT_MOVED:
+                case SDL_WINDOWEVENT_EXPOSED:
+                    redraw = true;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
             }
         }
 
         if (redraw) {
             drawpage(slide[pagei]);
             if (progressbar) {
-                drawprogressbar((float)(pagei+1)/arrlen(slide));
+                drawprogressbar((float)(pagei + 1) / arrlen(slide));
             }
             SDL_RenderPresent(rend);
         }
@@ -363,22 +361,22 @@ int main(int argc, char **argv) {
             srcfile = argv[1];
         }
     } else {
-        srcfile = (char*)tinyfd_openFileDialog("Open slide", gethomedir(), 0, NULL, NULL, false);
+        srcfile = (char *)tinyfd_openFileDialog("Open slide", gethomedir(), 0,
+                                                NULL, NULL, false);
     }
 
     if (srcfile != NULL /* not reading from stdin */) {
         fin = fopen(srcfile, "r");
         if (fin == NULL) {
-            die("Failed opening file %s", srcfile);
+            panic("Failed opening file %s", srcfile);
         }
         /* basename() is not portable */
         char *sep = srcfile + strlen(srcfile);
-        while (sep > srcfile && 
-                *sep != '/'
+        while (sep > srcfile && *sep != '/'
 #ifdef _WIN32
-                && *sep != '\\'
+               && *sep != '\\'
 #endif
-              )
+        )
             sep--;
         if (sep > srcfile) {
             *sep = 0;
@@ -401,7 +399,7 @@ int main(int argc, char **argv) {
 Slide parse_slide_from_file(FILE *in) {
     Slide slide = arrnew;
     long slidewdlen = slidewd ? strlen(slidewd) : 0;
-    char buf[SSLIDE_BUFSIZE] = { 0 };
+    char buf[SSLIDE_BUFSIZE] = {0};
     while (true) {
         Page page = arrnew;
         while (true) {
@@ -417,9 +415,11 @@ Slide parse_slide_from_file(FILE *in) {
 
             if (ret == NULL /* EOF */) {
                 if (arrlen(slide) == 0) {
-                    die("Slide has no page, make sure every page is terminated");
+                    warn("Slide has no page, make sure every page is "
+                         "terminated with a @");
                 }
-                /* didn't add page to slide, must free now to prevent memory leak */
+                /* didn't add page to slide, must free now to prevent memory
+                 * leak */
                 arrfree(page);
                 return slide;
             }
@@ -429,50 +429,53 @@ Slide parse_slide_from_file(FILE *in) {
                 break;
             }
             if (buf[0] != ';') {
-                die("No geometry before frame");
+                panic("No geometry before frame (;x;y;w;h)");
             }
             if (buf[1] == 'f') {
                 frame.x = frame.y = 0;
                 frame.w = frame.h = 100;
-            } else if (sscanf(buf, ";%d;%d;%d;%d", &frame.x, &frame.y, &frame.w, &frame.h) != 4) {
-                die("Geometry need to be in ;x;y;w;h");
-			}
+            } else if (sscanf(buf, ";%d;%d;%d;%d", &frame.x, &frame.y, &frame.w,
+                              &frame.h) != 4) {
+                panic("Geometry need to be in ;x;y;w;h");
+            }
 
             while (fgets(buf, sizeof buf, in) != NULL /* EOF */) {
                 if (buf[0] == '%') {
                     if (frame.type == FRAMEIMAGE) {
-                        die("Only one image per frame is allowed");
+                        warn("Only one image per frame is allowed");
                     }
                     char *newline = strchr(buf, '\n');
                     if (newline != NULL) {
                         *newline = '\x0';
                     } else {
-                        die("Error parsing");
+                        warn("Error parsing, don't know why");
                     }
-                    char filename[PATH_MAX] = { 0 };
+                    char filename[PATH_MAX] = {0};
                     if (in == stdin
 #ifndef _WIN32 /* path beginning with root is absolute path */
-                            || buf[1] == '/'
+                        || buf[1] == '/'
 #else /* relative path in windows is complicated */
-                            || !PathIsRelative(buf+1)
+                        || !PathIsRelative(buf + 1)
 #endif
-                            ) {
-                        strcpy(filename, buf+1);
+                    ) {
+                        strcpy(filename, buf + 1);
                     } else {
-                        long basenamelen = strlen(buf+1);
+                        long basenamelen = strlen(buf + 1);
                         memcpy(filename, slidewd, slidewdlen);
                         filename[slidewdlen] = '/';
-                        memcpy(filename + slidewdlen + 1, buf+1, basenamelen);
+                        memcpy(filename + slidewdlen + 1, buf + 1, basenamelen);
                         filename[slidewdlen + 1 + basenamelen] = '\x0';
                     }
 
                     frame.type = FRAMEIMAGE;
                     frame.image.texture = IMG_LoadTexture(rend, filename);
                     if (frame.image.texture == NULL) {
-                        fprintf(stderr, "Failed loading image %s: %s", filename, SDL_GetError());
+                        warn("Failed loading image %s: %s", filename,
+                             IMG_GetError());
                     }
                     int imgw, imgh;
-                    SDL_QueryTexture(frame.image.texture, NULL, NULL, &imgw, &imgh);
+                    SDL_QueryTexture(frame.image.texture, NULL, NULL, &imgw,
+                                     &imgh);
                     frame.image.ratio = (float)imgw / imgh;
                 } else if (buf[0] != '\n') {
                     if (buf[0] == '#') {
@@ -480,12 +483,12 @@ Slide parse_slide_from_file(FILE *in) {
                         continue;
                     }
                     if (frame.type == FRAMEIMAGE) {
-                        die("Text and image is same frame is not allowed");
+                        panic("Text and image is same frame is not allowed");
                     }
                     frame.type = FRAMETEXT;
                     int blen = strlen(buf);
-                    buf[blen-1] = '\x0'; /* truncate newline character */
-                    char *bufalloc = xmalloc(blen+1);
+                    buf[blen - 1] = '\x0'; /* truncate newline character */
+                    char *bufalloc = xmalloc(blen + 1);
                     memcpy(bufalloc, buf, blen);
                     arrpush(frame.lines, bufalloc);
                 } else /* empty line, terminating frame */ {
@@ -501,22 +504,24 @@ Slide parse_slide_from_file(FILE *in) {
 
 #ifndef NO_JSON_CONFIG
 void readconfig() {
-    char configpath[PATH_MAX] = { 0 };
+    char configpath[PATH_MAX] = {0};
     strcpy(configpath, gethomedir());
     strcat(configpath, "/.sslide.json");
     FILE *configfile = fopen(configpath, "ab+");
     fseek(configfile, 0L, SEEK_END);
     long fsize = ftell(configfile);
     fseek(configfile, 0L, SEEK_SET);
-    char *content = xmalloc(fsize+1);
+    char *content = xmalloc(fsize + 1);
     fread(content, 1, fsize, configfile);
     content[fsize] = '\x0';
     fclose(configfile);
     sjson_result sj = sjson_deserialize(content, fsize);
-    if (sj.err) goto bad;
-    if (sj.json->type != SJSON_OBJECT) goto bad;
+    if (sj.err)
+        goto bad;
+    if (sj.json->type != SJSON_OBJECT)
+        goto bad;
     sjson_result fontpathjson = sjson_object_get(sj.json, "fontpath");
-    if (!fontpathjson.err)  {
+    if (!fontpathjson.err) {
         if (fontpathjson.json->type == SJSON_STRING) {
             fontpath = fontpathjson.json->v.str;
         }
@@ -546,4 +551,3 @@ char *gethomedir() {
 #endif
     return ret;
 }
-

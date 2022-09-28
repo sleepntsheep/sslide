@@ -1,5 +1,10 @@
-/* log.h - simple logging library - sleepntsheep 2022
- * idea is that logging should be simple and easy, 
+/** 
+ * @file log.h
+ * @brief Logging functions
+ */
+/* log.h v0.0.1
+ * simple logging library - sleepntsheep 2022
+ * logging should be simple and easy, 
  * here you put in argument just as how you would printf it
  * panic(...) : log at panic level and abort
  * warn(...) : log at warn level
@@ -18,40 +23,51 @@
 #include <string.h>
 
 #define __FL__ __FILE__, __LINE__
-#define panic(...) _panic(__FL__, __VA_ARGS__)
-#define panicerr(...) _panicerr(__FL__, __VA_ARGS__)
-#define warn(...) _warn(__FL__, __VA_ARGS__)
-#define warnerr(...) _warnerr(__FL__, __VA_ARGS__)
-#define info(...) _info(__FL__, __VA_ARGS__)
-#define infoerr(...) _infoerr(__FL__, __VA_ARGS__)
+/**
+ * @brief log at panic level and abort
+ */
+#define panic(...) do {  \
+                        __stderr_log("PANIC", __FL__, __VA_ARGS__);     \
+                        exit(1);                \
+                    } while (0)
+/**
+ * @brief log at panic level, print errno and abort
+ */
+#define panicerr(...) do {  \
+                        __stderr_log("PANIC", __FL__, __VA_ARGS__);     \
+                        perror("");             \
+                        exit(1);                \
+                    } while (0)
+/**
+ * @brief log at warn level
+ */
+#define warn(...) do {  \
+                        __stderr_log("WARN", __FL__, __VA_ARGS__);     \
+                    } while (0)
+/**
+ * @brief log at warn level, print errno
+ */
+#define warnerr(...) do {  \
+                        __stderr_log("WARN", __FL__, __VA_ARGS__);     \
+                        perror("");             \
+                    } while (0)
+/**
+ * @brief log at info level
+ */
+#define info(...) do {  \
+                        __stderr_log("INFO", __FL__, __VA_ARGS__);     \
+                    } while (0)
+/**
+ * @brief log at info level, print errno
+ */
+#define infoerr(...) do {  \
+                        __stderr_log("INFO", __FL__, __VA_ARGS__);     \
+                        perror("");             \
+                    } while (0)
 
 void
 __stderr_log(const char *type, const char *file,
         const int line, const char *fmt, ...);
-
-void
-_panic(const char *file, const int line,
-        const char *fmt, ...);
-
-void
-_panicerr(const char *file, const int line,
-        const char *fmt, ...);
-
-void
-_warn(const char *file, const int line,
-        const char *fmt, ...);
-
-void
-_warnerr(const char *file, const int line,
-        const char *fmt, ...);
-
-void
-_info(const char *file, const int line,
-        const char *fmt, ...);
-
-void
-_infoerr(const char *file, const int line,
-        const char *fmt, ...);
 
 #endif /* SHEEP_LOG_H */
 
@@ -59,14 +75,8 @@ _infoerr(const char *file, const int line,
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#define _sheep_va(x) \
-        va_list a; \
-        va_start(a, fmt); \
-        x; \
-        va_end(a)
 
 void
 __stderr_log(const char *type, const char *file
@@ -74,57 +84,14 @@ __stderr_log(const char *type, const char *file
         , ...)
 {
     fprintf(stderr, "%s: %s:%d: ", type, file, line);
-    _sheep_va(vfprintf(stderr, fmt, a));
+    va_list a;
+    va_start(a, fmt);
+    vfprintf(stderr, fmt, a);
+    va_end(a);
     fprintf(stderr, "\n");
     fflush(stderr);
 }
 
-void
-_panic(const char *file, const int line,
-        const char *fmt, ...)
-{
-    _sheep_va(__stderr_log("panic", file, line, fmt, a));
-    exit(EXIT_FAILURE);
-}
-
-void
-_panicerr(const char *file, const int line,
-        const char *fmt, ...)
-{
-    _sheep_va(__stderr_log("panic", file, line, fmt, a));
-    perror("");
-    exit(EXIT_FAILURE);
-}
-
-void
-_warn(const char *file, const int line,
-        const char *fmt, ...)
-{
-    _sheep_va(__stderr_log("warn", file, line, fmt, a));
-}
-
-void
-_warnerr(const char *file, const int line,
-        const char *fmt, ...)
-{
-    _sheep_va(__stderr_log("warn", file, line, fmt, a));
-    perror("");
-}
-
-void
-_info(const char *file, const int line,
-        const char *fmt, ...)
-{
-    _sheep_va(__stderr_log("info", file, line, fmt, a));
-}
-
-void
-_infoerr(const char *file, const int line,
-        const char *fmt, ...)
-{
-    _sheep_va(__stderr_log("info", file, line, fmt, a));
-    perror("");
-}
 
 #endif /* SHEEP_LOG_IMPLEMENTATION */
 
