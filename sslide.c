@@ -355,8 +355,9 @@ int main(int argc, char **argv) {
     FILE *fin = NULL;
     char *srcfile = NULL;
     if (argc > 1) {
-        if (argv[1][0] == '-') {
+        if (strcmp(argv[1], "-") == 0) {
             fin = stdin;
+            info("Reading from stdin");
         } else {
             srcfile = argv[1];
         }
@@ -368,7 +369,7 @@ int main(int argc, char **argv) {
     if (srcfile != NULL /* not reading from stdin */) {
         fin = fopen(srcfile, "r");
         if (fin == NULL) {
-            panic("Failed opening file %s", srcfile);
+            panicerr("Failed opening file %s", srcfile);
         }
         /* basename() is not portable */
         char *sep = srcfile + strlen(srcfile);
@@ -534,7 +535,7 @@ bad:
 }
 #endif
 
-char *gethomedir() {
+ichar *gethomedir() {
     char *ret = NULL;
 #ifdef _WIN32
     ret = getenv("USERPROFILE");
@@ -551,3 +552,4 @@ char *gethomedir() {
 #endif
     return ret;
 }
+i
