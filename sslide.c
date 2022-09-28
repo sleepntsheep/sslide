@@ -76,13 +76,13 @@ typedef struct {
 typedef Frame *Page;
 typedef Page *Slide;
 
+static const int linespacing = 3;
 static int w, h;
 static SDL_RWops *fontrw;
 static SDL_Window *win;
 static SDL_Renderer *rend;
 static TTF_Font *fonts[FONT_NSCALES + 1];
 static int fontsheight[FONT_NSCALES + 1];
-static const int linespacing = 3;
 static Slide slide;
 static char *fontpath = NULL;
 /* work directory, if reading from file
@@ -119,15 +119,15 @@ void loadfonts() {
             fonts[i] = TTF_OpenFont(fontpath, i * FONT_STEP);
         }
         if (fonts[i] == NULL) {
-            fprintf(stderr, "Open Font fail (size: %d): %s\n", i,
-                    SDL_GetError());
+            warn("Failed opening font (size: %d) : %s", i * FONT_STEP,
+                 SDL_GetError());
         }
         fontsheight[i] = TTF_FontHeight(fonts[i]);
     }
 }
 
 int getfontsize(Frame frame, int *width, int *height) {
-    /* may be faster with binary search */
+    /* may be faster with binary search but who care */
     int result = 0;
     int linecount = arrlen(frame.lines);
     int lfac = linespacing * (linecount - 1);
