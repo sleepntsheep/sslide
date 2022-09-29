@@ -535,7 +535,7 @@ bad:
 }
 #endif
 
-ichar *gethomedir() {
+char *gethomedir() {
     char *ret = NULL;
 #ifdef _WIN32
     ret = getenv("USERPROFILE");
@@ -552,4 +552,3 @@ ichar *gethomedir() {
 #endif
     return ret;
 }
-i
