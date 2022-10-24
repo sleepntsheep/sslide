@@ -33,7 +33,7 @@ system "Windows"
 defines { "NDEBUG" }
 optimize "On"
 defines { "main=SDL_main" }
-links { "mingw32", "SDL2main", "comdlg32", "ole32" }
+links { "mingw32", "SDL2main", "comdlg32", "ole32", "shlwapi" }
 
 filter "configurations:Debug"
 defines { "DEBUG" }
