@@ -4,15 +4,20 @@ configurations { "Debug", "Release", "Mingw" }
 
 newaction {
     trigger     = "clean",
-    description = "clean the software",
+    description = "clean the build directory",
     execute     = function ()
-        print("clean the build...")
+        print("----\nCleaning")
         os.rmdir("./build")
+        print("Removed ./build")
         os.rmdir("Debug")
+        print("Removed ./Debug")
         os.rmdir("Release")
+        print("Removed ./Release")
         os.rmdir("Mingw")
+        print("Removed ./Mingw")
         os.rmdir("Obj")
-        print("done.")
+        print("Removed ./Obj")
+        print("Cleaning done.\n------")
     end
 }
 
@@ -20,24 +25,16 @@ newaction {
     trigger = "install",
     description = "install to path",
     execute = function ()
+        print("----\nInstalling")
         os.copyfile("./Release/sslide", "/usr/local/bin")
+        print("Copyed ./Release/sslide to /usr/lobal/bin!\n----")
     end
 }
 
-newoption {
-    trigger = "sanitize",
-    description = "enable sanitizers"
-}
-
 project "sslide"
-kind "ConsoleApp"
+kind "WindowedApp"
 language "C"
 targetdir "%{cfg.buildcfg}"
-
-if _OPTIONS["sanitize"] then
-    buildoptions { "-fsanitize=address", "-fsanitize=undefined" }
-    linkoptions { "-fsanitize=address", "-fsanitize=undefined" }
-end
 
 files { "src/**.h", "src/**.c" }
 
