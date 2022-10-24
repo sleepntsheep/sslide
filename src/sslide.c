@@ -29,7 +29,7 @@
 #include "compat/path.h"
 #include "compat/mem.h"
 
-#define VERSION "0.0.5"
+#define VERSION "0.0.6"
 
 enum FrameType {
     FRAMETEXT,
@@ -357,8 +357,8 @@ int main(int argc, char **argv) {
             slide_dir = buf;
     }
 
-    slide = parse_slide_from_file(fin, slide_dir);
     init();
+    slide = parse_slide_from_file(fin, slide_dir);
     if (arrlen(slide) != 0) run();
     cleanup();
 }
