@@ -57,6 +57,6 @@ defines { "NDEBUG" }
 optimize "On"
 
 filter {}
-buildoptions { "-std=c17", "-Wall", "-Wextra", "-pedantic" }
+buildoptions { "-std=c99", "-Wall", "-Wall", "-Wextra", "-pedantic" }
 links { "SDL2", "SDL2_ttf", "SDL2_image", "fontconfig" }
 

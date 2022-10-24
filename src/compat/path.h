@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 #include <stdbool.h>
 
 bool path_is_relative(char *path);

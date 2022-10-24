@@ -29,15 +29,7 @@
 #include "compat/path.h"
 #include "compat/mem.h"
 
-#ifdef USE_UNIFONT
-#include "unifont.h"
-#else
-#include "font.h"
-#endif
-
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
+#define VERSION "0.0.4"
 
 enum FrameType {
     FRAMETEXT,
@@ -338,7 +330,11 @@ int main(int argc, char **argv) {
     FILE *fin = NULL;
     char *srcfile = NULL;
     if (argc > 1) {
-        if (strcmp(argv[1], "-") == 0) {
+        if (strcmp(argv[1], "-v") == 0) {
+            printf("%s Version: %s\n", argv[0], VERSION);
+            exit(0);
+        }
+        else if (strcmp(argv[1], "-") == 0) {
             fin = stdin;
             info("Reading from stdin");
         } else {
@@ -354,7 +350,7 @@ int main(int argc, char **argv) {
         if (fin == NULL) {
             panicerr("Failed opening file %s", srcfile);
         }
-        char buf[4096];
+        char buf[PATH_MAX];
         if (path_dirname(srcfile, strlen(srcfile), buf, sizeof buf) != 0)
             warn("Failed getting dirname of slide: %s", srcfile);
         else
