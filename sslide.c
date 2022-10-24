@@ -2,12 +2,9 @@
  *
  * I am ashamed for extensive use of global variable here, forgive me
  *
- * TODO
- *   - fallback font support, maybe with fontconfig
- *     not sure how scaling would work since different fonts
- *     have different sizes
  */
 
+#define _POSIX_C_SOURCE 200809L
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_pixels.h>
@@ -22,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #define SHEEP_DYNARRAY_IMPLEMENTATION
 #include "dynarray.h"
 #define SHEEP_LOG_IMPLEMENTATION
@@ -84,11 +82,10 @@ static Slide slide = dynarray_new;
 /* work directory, if reading from file
  * this is directory which that file is in
  * else if reading from stdin it's NULL */
-static char *slidewd = NULL;
 static bool progressbar = true;
 static bool invert = false;
 
-Slide parse_slide_from_file(FILE *in);
+Slide parse_slide_from_file(FILE *in, char *slide_dir);
 int getfontsize(Frame frame, int *width, int *height, char *path);
 void init();
 void drawframe(Frame frame);
@@ -132,7 +129,7 @@ char *frame_best_font(char **text) {
 
 int getfontsize(Frame frame, int *width, int *height, char *path) {
     /* binary search to find largest font size that fit in frame */
-    int bl = 0, br = 128;
+    int bl = 0, br = 256;
     int linecount = dynarray_len(frame.lines);
     int lfac = linespacing * (linecount - 1);
     int result = 0;
@@ -363,36 +360,24 @@ int main(int argc, char **argv) {
         srcfile = (char *)tinyfd_openFileDialog("Open slide", gethomedir(), 0, NULL, NULL, false);
     }
 
+    char *slide_dir = NULL;
     if (srcfile != NULL /* not reading from stdin */) {
         fin = fopen(srcfile, "r");
         if (fin == NULL) {
             panicerr("Failed opening file %s", srcfile);
         }
-        /* basename() is not portable */
-        char *sep = srcfile + strlen(srcfile);
-        while (sep > srcfile && *sep != '/'
-#ifdef _WIN32
-               && *sep != '\\'
-#endif
-        )
-            sep--;
-        if (sep > srcfile) {
-            *sep = 0;
-            slidewd = srcfile;
-        } else {
-            slidewd = ".";
-        }
+        slide_dir = dirname(strdup(srcfile));
     }
 
     init();
-    slide = parse_slide_from_file(fin);
+    slide = parse_slide_from_file(fin, slide_dir);
     if (arrlen(slide) != 0) run();
     cleanup();
 }
 
-Slide parse_slide_from_file(FILE *in) {
+Slide parse_slide_from_file(FILE *in, char *slide_dir) {
     Slide slide = dynarray_new;
-    long slidewdlen = slidewd ? strlen(slidewd) : 0;
+    long slide_dirlen = slide_dir ? strlen(slide_dir) : 0;
     char buf[SSLIDE_BUFSIZE] = {0};
     while (true) {
         Page page = dynarray_new;
@@ -455,10 +440,10 @@ Slide parse_slide_from_file(FILE *in) {
                         strcpy(filename, buf + 1);
                     } else {
                         long basenamelen = strlen(buf + 1);
-                        memcpy(filename, slidewd, slidewdlen);
-                        filename[slidewdlen] = '/';
-                        memcpy(filename + slidewdlen + 1, buf + 1, basenamelen);
-                        filename[slidewdlen + 1 + basenamelen] = '\x0';
+                        memcpy(filename, slide_dir, slide_dirlen);
+                        filename[slide_dirlen] = '/';
+                        memcpy(filename + slide_dirlen + 1, buf + 1, basenamelen);
+                        filename[slide_dirlen + 1 + basenamelen] = '\x0';
                     }
 
                     frame.type = FRAMEIMAGE;
@@ -473,17 +458,14 @@ Slide parse_slide_from_file(FILE *in) {
                     frame.image.ratio = (float)imgw / imgh;
                 } else if (buf[0] != '\n') {
                     if (buf[0] == '#') {
-                        /* comment */
                         continue;
                     }
                     if (frame.type == FRAMEIMAGE) {
                         panic("Text and image is same frame is not allowed");
                     }
                     frame.type = FRAMETEXT;
-                    int blen = strlen(buf);
-                    buf[blen - 1] = '\x0'; /* truncate newline character */
-                    char *bufalloc = xmalloc(blen + 1);
-                    memcpy(bufalloc, buf, blen);
+                    char *bufalloc = strdup(buf);
+                    *strchr(bufalloc, '\n') = 0;
                     dynarray_push(frame.lines, bufalloc);
                 } else /* empty line, terminating frame */ {
                     frame.font = frame_best_font(frame.lines);
