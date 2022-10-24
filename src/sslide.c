@@ -29,7 +29,7 @@
 #include "compat/path.h"
 #include "compat/mem.h"
 
-#define VERSION "0.0.4"
+#define VERSION "0.0.5"
 
 enum FrameType {
     FRAMETEXT,
@@ -418,7 +418,7 @@ Slide parse_slide_from_file(FILE *in, char *slide_dir) {
                         warn("Error parsing, don't know why");
                     }
                     char filename[PATH_MAX] = {0};
-                    if (in == stdin || path_is_relative(buf + 1)) {
+                    if (in == stdin || !path_is_relative(buf + 1)) {
                         strcpy(filename, buf + 1);
                     } else {
                         long basenamelen = strlen(buf + 1);
