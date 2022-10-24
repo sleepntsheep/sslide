@@ -3,8 +3,6 @@
  * I am ashamed for extensive use of global variable here, forgive me
  *
  */
-
-#define _POSIX_C_SOURCE 200809L
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_pixels.h>
@@ -28,22 +26,13 @@
 #include "config.h"
 #include "tinyfiledialogs.h"
 #include "xmalloc.h"
+#include "compat/path.h"
+#include "compat/mem.h"
 
 #ifdef USE_UNIFONT
 #include "unifont.h"
 #else
 #include "font.h"
-#endif
-
-#ifdef _WIN32
-/* needed for tinyfiledialog and PathIsRelative */
-#include <shlwapi.h>
-#include <windows.h>
-#else
-/* needed for getting home directory (getpwuid)
-   in case $HOME isn't set */
-#include <pwd.h>
-#include <unistd.h>
 #endif
 
 #ifndef PATH_MAX
@@ -91,7 +80,6 @@ void init();
 void drawframe(Frame frame);
 void run();
 void cleanup();
-char *gethomedir();
 
 char *frame_best_font(char **text) {
     FcCharSet *cs = FcCharSetCreate();
@@ -357,7 +345,7 @@ int main(int argc, char **argv) {
             srcfile = argv[1];
         }
     } else {
-        srcfile = (char *)tinyfd_openFileDialog("Open slide", gethomedir(), 0, NULL, NULL, false);
+        srcfile = (char *)tinyfd_openFileDialog("Open slide", path_home_dir(), 0, NULL, NULL, false);
     }
 
     char *slide_dir = NULL;
@@ -366,11 +354,15 @@ int main(int argc, char **argv) {
         if (fin == NULL) {
             panicerr("Failed opening file %s", srcfile);
         }
-        slide_dir = dirname(strdup(srcfile));
+        char buf[4096];
+        if (path_dirname(srcfile, strlen(srcfile), buf, sizeof buf) != 0)
+            warn("Failed getting dirname of slide: %s", srcfile);
+        else
+            slide_dir = buf;
     }
 
-    init();
     slide = parse_slide_from_file(fin, slide_dir);
+    init();
     if (arrlen(slide) != 0) run();
     cleanup();
 }
@@ -430,13 +422,7 @@ Slide parse_slide_from_file(FILE *in, char *slide_dir) {
                         warn("Error parsing, don't know why");
                     }
                     char filename[PATH_MAX] = {0};
-                    if (in == stdin
-#ifndef _WIN32 /* path beginning with root is absolute path */
-                        || buf[1] == '/'
-#else /* relative path in windows is complicated */
-                        || !PathIsRelative(buf + 1)
-#endif
-                    ) {
+                    if (in == stdin || path_is_relative(buf + 1)) {
                         strcpy(filename, buf + 1);
                     } else {
                         long basenamelen = strlen(buf + 1);
@@ -477,23 +463,5 @@ Slide parse_slide_from_file(FILE *in, char *slide_dir) {
         dynarray_push(slide, page);
     }
     return slide;
-}
-
-char *gethomedir() {
-    char *ret = NULL;
-#ifdef _WIN32
-    ret = getenv("USERPROFILE");
-    if (ret == NULL) {
-        ret = xcalloc(1, PATH_MAX);
-        strcat(ret, getenv("HOMEDRIVE"));
-        strcat(ret, getenv("HOMEPATH"));
-    }
-#else
-    ret = getenv("HOME");
-    if (ret == NULL) {
-        ret = getpwuid(getuid())->pw_dir;
-    }
-#endif
-    return ret;
 }
 

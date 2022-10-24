@@ -1,6 +1,6 @@
 -- premake5.lua
 workspace "sslide"
-configurations { "Debug", "Release", "Mingw", "MinimalFont" }
+configurations { "Debug", "Release", "Mingw" }
 
 newaction {
     trigger     = "clean",
@@ -11,7 +11,6 @@ newaction {
         os.rmdir("Debug")
         os.rmdir("Release")
         os.rmdir("Mingw")
-        os.rmdir("MinimalFont")
         os.rmdir("Obj")
         print("done.")
     end
@@ -40,7 +39,7 @@ if _OPTIONS["sanitize"] then
     linkoptions { "-fsanitize=address", "-fsanitize=undefined" }
 end
 
-files { "*.h", "*.c" }
+files { "src/**.h", "src/**.c" }
 
 filter "configurations:Mingw"
 system "Windows"
@@ -56,8 +55,6 @@ symbols "On"
 filter "configurations:Release"
 defines { "NDEBUG" }
 optimize "On"
-
-filter "configurations:MinimalFont"
 
 filter {}
 buildoptions { "-std=c17", "-Wall", "-Wextra", "-pedantic" }
