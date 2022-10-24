@@ -21,16 +21,6 @@ newaction {
     end
 }
 
-newaction {
-    trigger = "install",
-    description = "install to path",
-    execute = function ()
-        print("----\nInstalling")
-        os.copyfile("./Release/sslide", "/usr/local/bin")
-        print("Copyed ./Release/sslide to /usr/lobal/bin!\n----")
-    end
-}
-
 project "sslide"
 kind "WindowedApp"
 language "C"
