@@ -3,6 +3,7 @@
  * I am ashamed for extensive use of global variable here, forgive me
  *
  */
+#define _POSIX_C_SOURCE 200809L
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_pixels.h>
@@ -26,9 +27,11 @@
 #include "config.h"
 #include "tinyfiledialogs.h"
 #include "xmalloc.h"
+#include "font.h"
 #include "compat/path.h"
 #include "compat/mem.h"
 
+#define INITIAL_SIZE 4
 #define VERSION "0.0.6"
 
 enum FrameType {
@@ -53,59 +56,93 @@ typedef struct {
 typedef Frame *Page;
 typedef Page *Slide;
 
-static FcConfig *fc_config = NULL;
-static FcFontSet *fc_all_font = NULL;
+/*
+typedef struct {
+    Frame *frames;
+    size_t len;
+    size_t cap;
+} Page;
+
+typedef struct {
+    Page *pages;
+    size_t len;
+    size_t cap;
+} Slide;
+
+void image_cleanup(Image *image)
+{
+    if (image->texture != NULL)
+        SDL_DestroyTexture(image->texture);
+}
+
+void frame_init(Frame *frame, int x, int y, int w, int h)
+{
+    frame->x = x;
+    frame->y = y;
+    frame->w = w;
+    frame->h = h;
+    frame->lines = StrArray_new();
+}
+
+void frame_cleanup(Frame *frame)
+{
+    image_cleanup(frame_cleanup);
+    StrArray_free(frame->lines);
+    free(font);
+}
+
+void page_init(Page *page)
+{
+    page->len = 0;
+    page->cap = INITIAL_SIZE;
+    page->frames = malloc(sizeof *page->frames * page->cap);
+}
+
+void page_push_frame(Page *page, Frame frame)
+{
+    if (page->len == page->cap)
+    {
+        page->cap *= 2;
+        page->frames = realloc(page->frames, sizeof *page->frames
+                page->cap);
+    }
+    page->frames[page->len++] = frame;
+}
+
+void page_cleanup(Page *page)
+{
+    for (size_t i = 0; i < page->len; i++)
+        frame_cleanup(page->frames[i]);
+    free(page->frames);
+}
+*/
+
+typedef struct {
+    Slide slide;
+    int width;
+    int height;
+    int line_spacing;
+    bool progress_bar;
+    bool invert;
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+} Context;
+
 static SDL_Window *win;
 static SDL_Renderer *rend;
 static const int linespacing = 3;
 static int w = 800, h = 600;
 static Slide slide = dynarray_new;
-/* work directory, if reading from file
- * this is directory which that file is in
- * else if reading from stdin it's NULL */
 static bool progressbar = true;
 static bool invert = false;
+static FontManager font_manager;
 
-Slide parse_slide_from_file(FILE *in, char *slide_dir);
+Slide parse_slide_from_file(char *path);
 int getfontsize(Frame frame, int *width, int *height, char *path);
 void init();
 void drawframe(Frame frame);
 void run();
 void cleanup();
-
-char *frame_best_font(char **text) {
-    FcCharSet *cs = FcCharSetCreate();
-    for (long i = 0; i < dynarray_len(text); i++) {
-        size_t len = strlen(text[i]);
-        for (size_t j = 0; j < len && text[i][j];) {
-            FcChar32 cs4;
-            int utf8len = FcUtf8ToUcs4((const FcChar8*)text[i] + j, &cs4, len - j);
-            j += utf8len;
-            FcCharSetAddChar(cs, cs4);
-        }
-    }
-    FcPattern *pat = FcPatternBuild(NULL, FC_CHARSET, FcTypeCharSet, cs, NULL);
-
-    FcResult match_result = 0;
-    FcFontSet *matches = FcFontSort(fc_config, pat, true, &cs, &match_result);
-
-    FcCharSetDestroy(cs);
-    if (pat) FcPatternDestroy(pat);
-
-    for (int i = 0; i < matches->nfont; i++) {
-        FcChar8 *path;
-        FcResult get_result = FcPatternGetString(matches->fonts[i], FC_FILE, 0, &path);
-        if (get_result != 0) continue;
-        if (FcStrStr(path, (const FcChar8*)".ttf") == NULL) {
-            continue;
-        }
-        FcFontSetDestroy(matches);
-        return (char*)path;
-    }
-
-    if (matches) FcFontSetDestroy(matches);
-    return NULL;
-}
 
 int getfontsize(Frame frame, int *width, int *height, char *path) {
     /* binary search to find largest font size that fit in frame */
@@ -144,26 +181,33 @@ void init() {
     TTF_Init();
     if (IMG_Init(IMG_INIT_AVIF | IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) < 1)
         panic("Img_INIT: %s", IMG_GetError());
-    win = SDL_CreateWindow("Slide", SDL_WINDOWPOS_CENTERED,
-                           SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
+    win = SDL_CreateWindow("Slide", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
+    if (!win)
+        panic("Failed creating window: %s", SDL_GetError());
     rend = SDL_CreateRenderer(win, -1, 0);
-    if (!FcInit())
-        panic("FcInit Failed");
-    fc_config = FcConfigGetCurrent();
-    FcPattern *pat = FcPatternCreate();
-    FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, NULL);
-    fc_all_font = FcFontList(fc_config, pat, os);
+    if (!rend)
+        panic("Failed creating renderer: %s", SDL_GetError());
+    if (FontManager_init(&font_manager) < 0)
+        panic("Failed initializing FontManager");
 }
 
 void cleanup() {
     for (long i = 0; i < dynarray_len(slide); i++) {
-        for (long j = 0; j < dynarray_len(slide[i]); j++)
-            if (slide[i][j].type == FRAMEIMAGE)
+        for (long j = 0; j < dynarray_len(slide[i]); j++) {
+            if (slide[i][j].type == FRAMEIMAGE) {
                 SDL_DestroyTexture(slide[i][j].image.texture);
-            else
+            }
+            else {
+                for (long k = 0; k < dynarray_len(slide[i][j].lines); k++) {
+                    free(slide[i][j].lines[k]);
+                }
                 arrfree(slide[i][j].lines);
+            }
+            free(slide[i][j].font);
+        }
         arrfree(slide[i]);
     }
+    FontManager_cleanup(&font_manager);
     arrfree(slide);
     SDL_Quit();
     TTF_Quit();
@@ -327,45 +371,39 @@ void run() {
 }
 
 int main(int argc, char **argv) {
-    FILE *fin = NULL;
     char *srcfile = NULL;
     if (argc > 1) {
         if (strcmp(argv[1], "-v") == 0) {
             printf("%s Version: %s\n", argv[0], VERSION);
             exit(0);
         }
-        else if (strcmp(argv[1], "-") == 0) {
-            fin = stdin;
-            info("Reading from stdin");
-        } else {
+        else {
+            if (strcmp(argv[1], "-") == 0)
+                info("Reading from stdin");
             srcfile = argv[1];
         }
     } else {
         srcfile = (char *)tinyfd_openFileDialog("Open slide", path_home_dir(), 0, NULL, NULL, false);
     }
 
-    char *slide_dir = NULL;
-    if (srcfile != NULL /* not reading from stdin */) {
-        fin = fopen(srcfile, "r");
-        if (fin == NULL) {
-            panicerr("Failed opening file %s", srcfile);
-        }
-        char buf[PATH_MAX];
-        if (path_dirname(srcfile, strlen(srcfile), buf, sizeof buf) != 0)
-            warn("Failed getting dirname of slide: %s", srcfile);
-        else
-            slide_dir = buf;
-    }
-
     init();
-    slide = parse_slide_from_file(fin, slide_dir);
+    slide = parse_slide_from_file(srcfile);
     if (arrlen(slide) != 0) run();
+
     cleanup();
+    return 0;
 }
 
-Slide parse_slide_from_file(FILE *in, char *slide_dir) {
+Slide parse_slide_from_file(char *path) {
+    FILE *in;
+    if (!strcmp(path, "-")) in = stdin;
+    else in = fopen(path, "r");
+
+    char path_dir[PATH_MAX];
+    path_dirname(path, strlen(path), path_dir, sizeof path_dir);
+    size_t path_dir_len = strlen(path_dir);
+
     Slide slide = dynarray_new;
-    long slide_dirlen = slide_dir ? strlen(slide_dir) : 0;
     char buf[SSLIDE_BUFSIZE] = {0};
     while (true) {
         Page page = dynarray_new;
@@ -422,10 +460,10 @@ Slide parse_slide_from_file(FILE *in, char *slide_dir) {
                         strcpy(filename, buf + 1);
                     } else {
                         long basenamelen = strlen(buf + 1);
-                        memcpy(filename, slide_dir, slide_dirlen);
-                        filename[slide_dirlen] = '/';
-                        memcpy(filename + slide_dirlen + 1, buf + 1, basenamelen);
-                        filename[slide_dirlen + 1 + basenamelen] = '\x0';
+                        memcpy(filename, path_dir, path_dir_len);
+                        filename[path_dir_len] = '/';
+                        memcpy(filename + path_dir_len + 1, buf + 1, basenamelen);
+                        filename[path_dir_len + 1 + basenamelen] = '\x0';
                     }
 
                     frame.type = FRAMEIMAGE;
@@ -450,7 +488,7 @@ Slide parse_slide_from_file(FILE *in, char *slide_dir) {
                     *strchr(bufalloc, '\n') = 0;
                     dynarray_push(frame.lines, bufalloc);
                 } else /* empty line, terminating frame */ {
-                    frame.font = frame_best_font(frame.lines);
+                    frame.font = FontManager_get_best_font(&font_manager, frame.lines, arrlen(frame.lines));
                     dynarray_push(page, frame);
                     break;
                 }
@@ -458,6 +496,7 @@ Slide parse_slide_from_file(FILE *in, char *slide_dir) {
         }
         dynarray_push(slide, page);
     }
+    if (in != stdin) fclose(in);
     return slide;
 }
 

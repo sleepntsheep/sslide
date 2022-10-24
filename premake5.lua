@@ -37,6 +37,8 @@ links { "mingw32", "SDL2main", "comdlg32", "ole32", "shlwapi" }
 
 filter "configurations:Debug"
 defines { "DEBUG" }
+buildoptions { "-fno-omit-frame-pointer", "-fsanitize=undefined,address" }
+linkoptions { "-fsanitize=undefined,address" }
 symbols "On"
 
 filter "configurations:Release"
