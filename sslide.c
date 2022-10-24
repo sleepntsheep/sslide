@@ -15,6 +15,7 @@
 #include <SDL2/SDL_rwops.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_video.h>
+#include <fontconfig/fontconfig.h>
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -23,12 +24,8 @@
 #include <string.h>
 #define SHEEP_DYNARRAY_IMPLEMENTATION
 #include "dynarray.h"
-#ifndef NO_JSON_CONFIG
-#define SHEEP_SJSON_IMPLEMENTATION
-#include "sjson.h"
 #define SHEEP_LOG_IMPLEMENTATION
 #include "log.h"
-#endif
 #define SHEEP_XMALLOC_IMPLEMENTATION
 #include "config.h"
 #include "tinyfiledialogs.h"
@@ -70,21 +67,20 @@ typedef struct {
     int type;
     Image image;
     char **lines;
+    char *font;
     int x, y, w, h;
 } Frame;
 
 typedef Frame *Page;
 typedef Page *Slide;
 
-static const int linespacing = 3;
-static int w, h;
-static SDL_RWops *fontrw;
+static FcConfig *fc_config = NULL;
+static FcFontSet *fc_all_font = NULL;
 static SDL_Window *win;
 static SDL_Renderer *rend;
-static TTF_Font *fonts[FONT_NSCALES + 1];
-static int fontsheight[FONT_NSCALES + 1];
-static Slide slide;
-static char *fontpath = NULL;
+static const int linespacing = 3;
+static int w = 800, h = 600;
+static Slide slide = dynarray_new;
 /* work directory, if reading from file
  * this is directory which that file is in
  * else if reading from stdin it's NULL */
@@ -92,71 +88,75 @@ static char *slidewd = NULL;
 static bool progressbar = true;
 static bool invert = false;
 
-#ifndef NO_JSON_CONFIG
-void readconfig();
-#endif
-void loadfonts();
 Slide parse_slide_from_file(FILE *in);
-int getfontsize(Frame frame, int *width, int *height);
+int getfontsize(Frame frame, int *width, int *height, char *path);
 void init();
 void drawframe(Frame frame);
 void run();
 void cleanup();
 char *gethomedir();
 
-void loadfonts() {
-    if (fontpath == NULL) {
-        fontrw = SDL_RWFromMem(font_ttf, font_ttf_len);
-        if (fontrw == NULL) {
-            panic("FontRwop: %s", SDL_GetError());
+char *frame_best_font(char **text) {
+    FcCharSet *cs = FcCharSetCreate();
+    for (long i = 0; i < dynarray_len(text); i++) {
+        size_t len = strlen(text[i]);
+        for (size_t j = 0; j < len && text[i][j];) {
+            FcChar32 cs4;
+            int utf8len = FcUtf8ToUcs4((const FcChar8*)text[i] + j, &cs4, len - j);
+            j += utf8len;
+            FcCharSetAddChar(cs, cs4);
         }
     }
-    for (int i = 1; i <= FONT_NSCALES; i++) {
-        if (fontpath == NULL) {
-            SDL_RWseek(fontrw, 0, RW_SEEK_SET);
-            fonts[i] = TTF_OpenFontRW(fontrw, false, i * FONT_STEP);
-        } else {
-            fonts[i] = TTF_OpenFont(fontpath, i * FONT_STEP);
+    FcPattern *pat = FcPatternBuild(NULL, FC_CHARSET, FcTypeCharSet, cs, NULL);
+
+    FcResult match_result = 0;
+    FcFontSet *matches = FcFontSort(fc_config, pat, true, &cs, &match_result);
+
+    FcCharSetDestroy(cs);
+    if (pat) FcPatternDestroy(pat);
+
+    for (int i = 0; i < matches->nfont; i++) {
+        FcChar8 *path;
+        FcResult get_result = FcPatternGetString(matches->fonts[i], FC_FILE, 0, &path);
+        if (get_result != 0) continue;
+        if (FcStrStr(path, (const FcChar8*)".ttf") == NULL) {
+            continue;
         }
-        if (fonts[i] == NULL) {
-            warn("Failed opening font (size: %d) : %s", i * FONT_STEP,
-                 SDL_GetError());
-        }
-        fontsheight[i] = TTF_FontHeight(fonts[i]);
+        FcFontSetDestroy(matches);
+        return (char*)path;
     }
+
+    if (matches) FcFontSetDestroy(matches);
+    return NULL;
 }
 
-int getfontsize(Frame frame, int *width, int *height) {
-    /* may be faster with binary search but who care */
-    int result = 0;
-    int linecount = arrlen(frame.lines);
+int getfontsize(Frame frame, int *width, int *height, char *path) {
+    /* binary search to find largest font size that fit in frame */
+    int bl = 0, br = 128;
+    int linecount = dynarray_len(frame.lines);
     int lfac = linespacing * (linecount - 1);
-    for (int i = FONT_NSCALES; i > 0; i--) {
-        if (fontsheight[i] * linecount + lfac < frame.h * h / 100) {
-            result = i;
-            break;
+    int result = 0;
+    while (bl <= br) {
+        int m = bl + (br - bl) / 2;
+        int longest_line_w = 0, line_h;
+        TTF_Font *font = TTF_OpenFont(path, m);
+        for (long i = 0; i < dynarray_len(frame.lines); i++) {
+            int line_w;
+            TTF_SizeUTF8(font, frame.lines[i], &line_w, &line_h);
+            if (line_w > longest_line_w)
+                longest_line_w = line_w;
         }
-    }
-    int longesti = 0;
-    int longestw = 0;
-    for (long i = 0; i < arrlen(frame.lines); i++) {
-        int linew, _h;
-        TTF_SizeUTF8(fonts[result], frame.lines[i], &linew, &_h);
-        if (linew > longestw) {
-            longestw = linew;
-            longesti = i;
+        if (line_h * linecount + lfac < frame.h * h / 100 &&
+                longest_line_w < frame.w * w / 100) {
+            result = m;
+            *width = longest_line_w;
+            *height = line_h * linecount + lfac;
+            bl = m + 1;
+        } else {
+            br = m - 1;
         }
+        TTF_CloseFont(font);
     }
-    for (int i = result; i > 0; i--) {
-        int linewidth, _h;
-        TTF_SizeUTF8(fonts[i], frame.lines[longesti], &linewidth, &_h);
-        if (linewidth < frame.w * w / 100) {
-            *width = linewidth;
-            result = i;
-            break;
-        }
-    }
-    *height = fontsheight[result] * linecount + lfac;
     return result;
 }
 
@@ -165,30 +165,26 @@ void init() {
     h = 600;
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
-    if (IMG_Init(IMG_INIT_AVIF | IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) <
-        1) {
+    if (IMG_Init(IMG_INIT_AVIF | IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) < 1)
         panic("Img_INIT: %s", IMG_GetError());
-    }
     win = SDL_CreateWindow("Slide", SDL_WINDOWPOS_CENTERED,
                            SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
     rend = SDL_CreateRenderer(win, -1, 0);
+    if (!FcInit())
+        panic("FcInit Failed");
+    fc_config = FcConfigGetCurrent();
+    FcPattern *pat = FcPatternCreate();
+    FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, NULL);
+    fc_all_font = FcFontList(fc_config, pat, os);
 }
 
 void cleanup() {
-    if (fontrw != NULL) {
-        SDL_RWclose(fontrw);
-    }
-    for (int i = 1; i <= FONT_NSCALES; i++) {
-        TTF_CloseFont(fonts[i]);
-    }
-    for (long i = 0; i < arrlen(slide); i++) {
-        for (long j = 0; j < arrlen(slide[i]); j++) {
-            if (slide[i][j].type == FRAMEIMAGE) {
+    for (long i = 0; i < dynarray_len(slide); i++) {
+        for (long j = 0; j < dynarray_len(slide[i]); j++)
+            if (slide[i][j].type == FRAMEIMAGE)
                 SDL_DestroyTexture(slide[i][j].image.texture);
-            } else {
+            else
                 arrfree(slide[i][j].lines);
-            }
-        }
         arrfree(slide[i]);
     }
     arrfree(slide);
@@ -203,22 +199,23 @@ void drawframe(Frame frame) {
     int framew = frame.w * w / 100;
     int frameh = frame.h * h / 100;
     if (frame.type == FRAMETEXT) {
-        int twidth, theight;
-        int fontsize = getfontsize(frame, &twidth, &theight);
-        int ptperline = linespacing + fontsheight[fontsize];
-        int xoffset = (framew - twidth) / 2;
-        int yoffset = (frameh - theight) / 2;
+        int total_width, total_height;
+        int fontsize = getfontsize(frame, &total_width, &total_height, frame.font);
+        TTF_Font *font = TTF_OpenFont(frame.font, fontsize);
+        int line_height = TTF_FontHeight(font);
+        int xoffset = (framew - total_width) / 2;
+        int yoffset = (frameh - total_height) / 2;
 
-        for (long i = 0; i < arrlen(frame.lines); i++) {
+        for (long i = 0; i < dynarray_len(frame.lines); i++) {
             SDL_Surface *textsurface = TTF_RenderUTF8_Blended(
-                fonts[fontsize], frame.lines[i], invert ? bg : fg);
+                font, frame.lines[i], invert ? bg : fg);
             SDL_Texture *texttexture =
                 SDL_CreateTextureFromSurface(rend, textsurface);
             int linew, lineh;
             SDL_QueryTexture(texttexture, NULL, NULL, &linew, &lineh);
             SDL_Rect bound = {
                 .x = frame.x * w / 100 + xoffset,
-                .y = frame.y * h / 100 + ptperline * i + yoffset,
+                .y = frame.y * h / 100 + (line_height + linespacing) * i + yoffset,
                 .w = linew,
                 .h = lineh,
             };
@@ -226,6 +223,7 @@ void drawframe(Frame frame) {
             SDL_FreeSurface(textsurface);
             SDL_DestroyTexture(texttexture);
         }
+        TTF_CloseFont(font);
     } else if (frame.type == FRAMEIMAGE) {
         SDL_Rect bound;
         /* find maximum (width, height) which
@@ -253,7 +251,7 @@ void drawpage(Page page) {
     SDL_Color realbg = invert ? fg : bg;
     SDL_SetRenderDrawColor(rend, realbg.r, realbg.g, realbg.b, realbg.a);
     SDL_RenderClear(rend);
-    for (long i = 0; i < arrlen(page); i++) {
+    for (long i = 0; i < dynarray_len(page); i++) {
         drawframe(page[i]);
     }
 }
@@ -294,7 +292,7 @@ void run() {
                 case SDLK_DOWN: /* FALLTHROUGH */
                 case SDLK_RIGHT:
                 case SDLK_j:
-                    if (pagei < arrlen(slide) - 1) {
+                    if (pagei < dynarray_len(slide) - 1) {
                         pagei++;
                         redraw = true;
                     }
@@ -304,7 +302,7 @@ void run() {
                     redraw = true;
                     break;
                 case SDLK_d:
-                    pagei = arrlen(slide) - 1;
+                    pagei = dynarray_len(slide) - 1;
                     redraw = true;
                     break;
                 case SDLK_i:
@@ -343,7 +341,7 @@ void run() {
         if (redraw) {
             drawpage(slide[pagei]);
             if (progressbar) {
-                drawprogressbar((float)(pagei + 1) / arrlen(slide));
+                drawprogressbar((float)(pagei + 1) / dynarray_len(slide));
             }
             SDL_RenderPresent(rend);
         }
@@ -362,8 +360,7 @@ int main(int argc, char **argv) {
             srcfile = argv[1];
         }
     } else {
-        srcfile = (char *)tinyfd_openFileDialog("Open slide", gethomedir(), 0,
-                                                NULL, NULL, false);
+        srcfile = (char *)tinyfd_openFileDialog("Open slide", gethomedir(), 0, NULL, NULL, false);
     }
 
     if (srcfile != NULL /* not reading from stdin */) {
@@ -387,22 +384,18 @@ int main(int argc, char **argv) {
         }
     }
 
-#ifndef NO_JSON_CONFIG
-    readconfig();
-#endif
     init();
-    loadfonts();
     slide = parse_slide_from_file(fin);
-    run();
+    if (arrlen(slide) != 0) run();
     cleanup();
 }
 
 Slide parse_slide_from_file(FILE *in) {
-    Slide slide = arrnew;
+    Slide slide = dynarray_new;
     long slidewdlen = slidewd ? strlen(slidewd) : 0;
     char buf[SSLIDE_BUFSIZE] = {0};
     while (true) {
-        Page page = arrnew;
+        Page page = dynarray_new;
         while (true) {
             Frame frame = {0};
             char *ret;
@@ -415,13 +408,13 @@ Slide parse_slide_from_file(FILE *in) {
             }
 
             if (ret == NULL /* EOF */) {
-                if (arrlen(slide) == 0) {
+                if (dynarray_len(slide) == 0) {
                     warn("Slide has no page, make sure every page is "
                          "terminated with a @");
                 }
                 /* didn't add page to slide, must free now to prevent memory
                  * leak */
-                arrfree(page);
+                dynarray_free(page);
                 return slide;
             }
 
@@ -491,49 +484,18 @@ Slide parse_slide_from_file(FILE *in) {
                     buf[blen - 1] = '\x0'; /* truncate newline character */
                     char *bufalloc = xmalloc(blen + 1);
                     memcpy(bufalloc, buf, blen);
-                    arrpush(frame.lines, bufalloc);
+                    dynarray_push(frame.lines, bufalloc);
                 } else /* empty line, terminating frame */ {
-                    arrpush(page, frame);
+                    frame.font = frame_best_font(frame.lines);
+                    dynarray_push(page, frame);
                     break;
                 }
             }
         }
-        arrpush(slide, page);
+        dynarray_push(slide, page);
     }
     return slide;
 }
-
-#ifndef NO_JSON_CONFIG
-void readconfig() {
-    char configpath[PATH_MAX] = {0};
-    strcpy(configpath, gethomedir());
-    strcat(configpath, "/.sslide.json");
-    FILE *configfile = fopen(configpath, "ab+");
-    fseek(configfile, 0L, SEEK_END);
-    long fsize = ftell(configfile);
-    fseek(configfile, 0L, SEEK_SET);
-    char *content = xmalloc(fsize + 1);
-    fread(content, 1, fsize, configfile);
-    content[fsize] = '\x0';
-    fclose(configfile);
-    sjson_result sj = sjson_deserialize(content, fsize);
-    if (sj.err)
-        goto bad;
-    if (sj.json->type != SJSON_OBJECT)
-        goto bad;
-    sjson_result fontpathjson = sjson_object_get(sj.json, "fontpath");
-    if (!fontpathjson.err) {
-        if (fontpathjson.json->type == SJSON_STRING) {
-            fontpath = fontpathjson.json->v.str;
-        }
-    }
-    sjson_free(sj.json);
-    free(content);
-bad:
-    warn("Failed reading json config");
-    return;
-}
-#endif
 
 char *gethomedir() {
     char *ret = NULL;
@@ -552,3 +514,4 @@ char *gethomedir() {
 #endif
     return ret;
 }
+

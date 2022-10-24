@@ -61,5 +61,5 @@ filter "configurations:MinimalFont"
 
 filter {}
 buildoptions { "-std=c17", "-Wall", "-Wextra", "-pedantic" }
-links { "SDL2", "SDL2_ttf", "SDL2_image" }
+links { "SDL2", "SDL2_ttf", "SDL2_image", "fontconfig" }
 
