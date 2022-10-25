@@ -8,15 +8,12 @@ newaction {
     execute     = function ()
         print("----\nCleaning")
         os.rmdir("./build")
-        print("Removed ./build")
         os.rmdir("Debug")
-        print("Removed ./Debug")
         os.rmdir("Release")
-        print("Removed ./Release")
         os.rmdir("Mingw")
-        print("Removed ./Mingw")
-        os.rmdir("Obj")
-        print("Removed ./Obj")
+        os.rmdir("obj")
+        os.remove("sslide.make")
+        os.remove("Makefile")
         print("Cleaning done.\n------")
     end
 }

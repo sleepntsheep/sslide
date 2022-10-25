@@ -32,7 +32,10 @@
 #include "compat/path.h"
 #include "compat/mem.h"
 
+
 #define VERSION "0.0.7"
+
+#define SHEEP_PROFILER_IMPLEMENTATION
 
 enum FrameType {
     FRAMETEXT,
@@ -110,9 +113,12 @@ int main(int argc, char **argv) {
         }
     } 
 
-    if (argc <= 1) {
+    if (!srcfile) {
         srcfile = (char *)tinyfd_openFileDialog("Open slide", path_home_dir(), 0, NULL, NULL, false);
     }
+
+    if (!srcfile) 
+        fprintf(stderr, "Usage: %s [OPTIONS] <FILE>\n", argv[0]);
 
     init();
     slide = parse_slide_from_file(srcfile, simple);
@@ -173,13 +179,12 @@ void cleanup() {
             if (slide[i][j].type == FRAMEIMAGE) {
                 SDL_DestroyTexture(slide[i][j].image.texture);
             }
-            else {
+            else if (slide[i][j].type == FRAMETEXT) {
                 for (long k = 0; k < dynarray_len(slide[i][j].lines); k++) {
                     free(slide[i][j].lines[k]);
                 }
                 arrfree(slide[i][j].lines);
             }
-            free(slide[i][j].font);
         }
         arrfree(slide[i]);
     }
@@ -275,7 +280,7 @@ void run() {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
             case SDL_QUIT:
-                exit(0);
+                return;
             case SDL_KEYDOWN:
                 switch (event.key.keysym.sym) {
                 case SDLK_UP: /* FALLTHROUGH */
@@ -398,10 +403,9 @@ Slide parse_slide_from_file(char *path, bool simple) {
     Slide slide = dynarray_new;
     char buf[SSLIDE_BUFSIZE] = {0};
 
-    while (true) {
+    for (;;) {
         Page page = dynarray_new;
-        while (true) {
-            buf[0] = 0;
+        for (;;) {
             Frame frame = {0};
             char *ret;
 
