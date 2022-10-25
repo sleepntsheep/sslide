@@ -71,7 +71,7 @@ static SDL_Window *win;
 static SDL_Renderer *rend;
 static Slide slide = dynarray_new;
 static FontManager font_manager;
-static const int linespacing = 3;
+static int linespacing = 3;
 static int w = 800, h = 600;
 #define x_margin_px (w * x_margin / 100.0f)
 #define y_margin_px (h * y_margin / 100.0f)
@@ -79,23 +79,47 @@ static int w = 800, h = 600;
 #define uh (h - 2 * y_margin_px)
 static bool progressbar = true;
 static bool invert = false;
-static bool simple = false;
 
-Slide parse_slide_from_file(char *);
-int getfontsize(Frame, int *width, int *height, char *path);
+Slide parse_slide_from_file(char *, bool);
+int getfontsize(Frame, int *, int *, char *);
 void init();
 void drawframe(Frame);
 void drawpage(Page);
 void drawprogressbar(float);
 void run();
 void cleanup();
+void frame_add_line(Frame *, char *);
+void frame_put_image(Frame *, char *, char *);
 
-int frame_hpx(Frame *frame) {
-    return frame->h * uh;
-}
+int main(int argc, char **argv) {
+    char *srcfile = NULL;
+    static bool simple = false;
 
-int frame_wpx(Frame *frame) {
-    return frame->w * uw;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-v") == 0) {
+            printf("%s Version: %s\n", argv[0], VERSION);
+            exit(0);
+        }
+        else if (strcmp(argv[i], "-s") == 0) {
+            simple = true;
+        }
+        else {
+            if (strcmp(argv[i], "-") == 0)
+                info("Reading from stdin");
+            srcfile = argv[i];
+        }
+    } 
+
+    if (argc <= 1) {
+        srcfile = (char *)tinyfd_openFileDialog("Open slide", path_home_dir(), 0, NULL, NULL, false);
+    }
+
+    init();
+    slide = parse_slide_from_file(srcfile, simple);
+    if (arrlen(slide) != 0) run();
+
+    cleanup();
+    return 0;
 }
 
 int getfontsize(Frame frame, int *width, int *height, char *path) {
@@ -129,8 +153,6 @@ int getfontsize(Frame frame, int *width, int *height, char *path) {
 }
 
 void init() {
-    w = 800;
-    h = 600;
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
     if (IMG_Init(IMG_INIT_AVIF | IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) < 1)
@@ -233,15 +255,14 @@ void drawpage(Page page) {
 }
 
 void drawprogressbar(float progress /* value between 0 and 1 */) {
-    SDL_Rect bar = {
+    SDL_Color realfg = invert ? bg : fg;
+    SDL_SetRenderDrawColor(rend, realfg.r, realfg.g, realfg.b, realfg.a);
+    SDL_RenderFillRect(rend, &(SDL_Rect) {
         .x = 0,
         .y = h - PROGRESSBAR_HEIGHT,
         .w = progress * w,
         .h = PROGRESSBAR_HEIGHT,
-    };
-    SDL_Color realfg = invert ? bg : fg;
-    SDL_SetRenderDrawColor(rend, realfg.r, realfg.g, realfg.b, realfg.a);
-    SDL_RenderFillRect(rend, &bar);
+    });
 }
 
 void run() {
@@ -325,37 +346,6 @@ void run() {
     }
 }
 
-int main(int argc, char **argv) {
-    char *srcfile = NULL;
-    //int simple = 0;
-
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-v") == 0) {
-            printf("%s Version: %s\n", argv[0], VERSION);
-            exit(0);
-        }
-        else if (strcmp(argv[i], "-s") == 0) {
-            simple = 1;
-        }
-        else {
-            if (strcmp(argv[i], "-") == 0)
-                info("Reading from stdin");
-            srcfile = argv[i];
-        }
-    } 
-
-    if (argc <= 1) {
-        srcfile = (char *)tinyfd_openFileDialog("Open slide", path_home_dir(), 0, NULL, NULL, false);
-    }
-
-    init();
-    slide = parse_slide_from_file(srcfile);
-    if (arrlen(slide) != 0) run();
-
-    cleanup();
-    return 0;
-}
-
 void frame_add_line(Frame *frame, char *line) {
     if (line[0] == '#')
         return;
@@ -391,11 +381,17 @@ void frame_put_image(Frame *frame, char *image_path, char *path_dir) {
     frame->image.ratio = (float)imgw / imgh;
 }
 
-Slide parse_slide_from_file(char *path) {
-    FILE *in;
-    int line;
-    if (!strcmp(path, "-")) in = stdin;
-    else in = fopen(path, "r");
+Slide parse_slide_from_file(char *path, bool simple) {
+    FILE *in = NULL;
+    int line = 0;
+
+    if (!strcmp(path, "-"))
+        in = stdin;
+    else
+        in = fopen(path, "r");
+
+    if (!in)
+        panic("Failed to open file");
 
     char *path_dir = dirname(strdup(path));
 
@@ -422,7 +418,7 @@ Slide parse_slide_from_file(char *path) {
                     warn("Slide has no page, make sure every page is "
                          "terminated with a @");
                 dynarray_free(page);
-                return slide;
+                goto end_slide;
             }
 
             if (!strcmp(buf, "@\n")) {
@@ -475,6 +471,7 @@ next_page:
         dynarray_push(slide, page);
 next_page_skip_current:;
     }
+end_slide:
     if (in != stdin) fclose(in);
     return slide;
 }

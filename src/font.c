@@ -29,8 +29,8 @@ int FontManager_cleanup(FontManager *manager)
 char *FontManager_get_best_font(FontManager *manager, char **text, size_t nstr) {
     FcCharSet *cs = FcCharSetCreate();
     if (!cs) goto cleanup;
-    FcPattern *pat;
-    FcFontSet *matches;
+    FcPattern *pat = NULL;
+    FcFontSet *matches = NULL;
     char *result = NULL;
     for (size_t i = 0; i < nstr; i++) {
         size_t len = strlen(text[i]);
