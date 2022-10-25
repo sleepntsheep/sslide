@@ -6,6 +6,9 @@ static const SDL_Color bg = { 255, 255, 255, 255 };
 static const SDL_Color fg = { 0,   0,   0,   255 };
 static const int PROGRESSBAR_HEIGHT = 8;
 
+static const int x_margin = 10;
+static const int y_margin = 5;
+
 #define SSLIDE_BUFSIZE 4096 /* max line size */
 
 #endif /* SSLIDE_CONFIG_H */

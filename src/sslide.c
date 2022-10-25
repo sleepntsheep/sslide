@@ -4,6 +4,7 @@
  *
  */
 #define _POSIX_C_SOURCE 200809L
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_pixels.h>
@@ -31,8 +32,7 @@
 #include "compat/path.h"
 #include "compat/mem.h"
 
-#define INITIAL_SIZE 4
-#define VERSION "0.0.6"
+#define VERSION "0.0.7"
 
 enum FrameType {
     FRAMETEXT,
@@ -56,67 +56,6 @@ typedef struct {
 typedef Frame *Page;
 typedef Page *Slide;
 
-/*
-typedef struct {
-    Frame *frames;
-    size_t len;
-    size_t cap;
-} Page;
-
-typedef struct {
-    Page *pages;
-    size_t len;
-    size_t cap;
-} Slide;
-
-void image_cleanup(Image *image)
-{
-    if (image->texture != NULL)
-        SDL_DestroyTexture(image->texture);
-}
-
-void frame_init(Frame *frame, int x, int y, int w, int h)
-{
-    frame->x = x;
-    frame->y = y;
-    frame->w = w;
-    frame->h = h;
-    frame->lines = StrArray_new();
-}
-
-void frame_cleanup(Frame *frame)
-{
-    image_cleanup(frame_cleanup);
-    StrArray_free(frame->lines);
-    free(font);
-}
-
-void page_init(Page *page)
-{
-    page->len = 0;
-    page->cap = INITIAL_SIZE;
-    page->frames = malloc(sizeof *page->frames * page->cap);
-}
-
-void page_push_frame(Page *page, Frame frame)
-{
-    if (page->len == page->cap)
-    {
-        page->cap *= 2;
-        page->frames = realloc(page->frames, sizeof *page->frames
-                page->cap);
-    }
-    page->frames[page->len++] = frame;
-}
-
-void page_cleanup(Page *page)
-{
-    for (size_t i = 0; i < page->len; i++)
-        frame_cleanup(page->frames[i]);
-    free(page->frames);
-}
-*/
-
 typedef struct {
     Slide slide;
     int width;
@@ -130,19 +69,34 @@ typedef struct {
 
 static SDL_Window *win;
 static SDL_Renderer *rend;
+static Slide slide = dynarray_new;
+static FontManager font_manager;
 static const int linespacing = 3;
 static int w = 800, h = 600;
-static Slide slide = dynarray_new;
+#define x_margin_px (w * x_margin / 100.0f)
+#define y_margin_px (h * y_margin / 100.0f)
+#define uw (w - 2 * x_margin_px)
+#define uh (h - 2 * y_margin_px)
 static bool progressbar = true;
 static bool invert = false;
-static FontManager font_manager;
+static bool simple = false;
 
-Slide parse_slide_from_file(char *path);
-int getfontsize(Frame frame, int *width, int *height, char *path);
+Slide parse_slide_from_file(char *);
+int getfontsize(Frame, int *width, int *height, char *path);
 void init();
-void drawframe(Frame frame);
+void drawframe(Frame);
+void drawpage(Page);
+void drawprogressbar(float);
 void run();
 void cleanup();
+
+int frame_hpx(Frame *frame) {
+    return frame->h * uh;
+}
+
+int frame_wpx(Frame *frame) {
+    return frame->w * uw;
+}
 
 int getfontsize(Frame frame, int *width, int *height, char *path) {
     /* binary search to find largest font size that fit in frame */
@@ -160,8 +114,8 @@ int getfontsize(Frame frame, int *width, int *height, char *path) {
             if (line_w > longest_line_w)
                 longest_line_w = line_w;
         }
-        if (line_h * linecount + lfac < frame.h * h / 100 &&
-                longest_line_w < frame.w * w / 100) {
+        if (line_h * linecount + lfac < frame.h * uh / 100 &&
+                longest_line_w < frame.w * uw / 100) {
             result = m;
             *width = longest_line_w;
             *height = line_h * linecount + lfac;
@@ -215,10 +169,10 @@ void cleanup() {
 }
 
 void drawframe(Frame frame) {
-    int framex = frame.x * w / 100;
-    int framey = frame.y * h / 100;
-    int framew = frame.w * w / 100;
-    int frameh = frame.h * h / 100;
+    int framex = x_margin_px + frame.x * uw / 100;
+    int framey = y_margin_px + frame.y * uh / 100;
+    int framew = frame.w * uw / 100;
+    int frameh = frame.h * uh / 100;
     if (frame.type == FRAMETEXT) {
         int total_width, total_height;
         int fontsize = getfontsize(frame, &total_width, &total_height, frame.font);
@@ -235,8 +189,9 @@ void drawframe(Frame frame) {
             int linew, lineh;
             SDL_QueryTexture(texttexture, NULL, NULL, &linew, &lineh);
             SDL_Rect bound = {
-                .x = frame.x * w / 100 + xoffset,
-                .y = frame.y * h / 100 + (line_height + linespacing) * i + yoffset,
+                .x = frame.x * uw / 100 + xoffset + x_margin_px,
+                .y = frame.y * uh / 100 + (line_height + linespacing) * i + yoffset
+                    + y_margin_px,
                 .w = linew,
                 .h = lineh,
             };
@@ -372,17 +327,24 @@ void run() {
 
 int main(int argc, char **argv) {
     char *srcfile = NULL;
-    if (argc > 1) {
-        if (strcmp(argv[1], "-v") == 0) {
+    //int simple = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-v") == 0) {
             printf("%s Version: %s\n", argv[0], VERSION);
             exit(0);
         }
-        else {
-            if (strcmp(argv[1], "-") == 0)
-                info("Reading from stdin");
-            srcfile = argv[1];
+        else if (strcmp(argv[i], "-s") == 0) {
+            simple = 1;
         }
-    } else {
+        else {
+            if (strcmp(argv[i], "-") == 0)
+                info("Reading from stdin");
+            srcfile = argv[i];
+        }
+    } 
+
+    if (argc <= 1) {
         srcfile = (char *)tinyfd_openFileDialog("Open slide", path_home_dir(), 0, NULL, NULL, false);
     }
 
@@ -394,107 +356,124 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+void frame_add_line(Frame *frame, char *line) {
+    if (line[0] == '#')
+        return;
+    char *nl = strchr(line, '\n');
+    if (nl) *nl = 0;
+    if (frame->type == FRAMEIMAGE) {
+        warn("Text and image is same frame is not allowed (line: %d)", line);
+        return;
+    }
+    frame->type = FRAMETEXT;
+    dynarray_push(frame->lines, strdup(line));
+}
+
+void frame_put_image(Frame *frame, char *image_path, char *path_dir) {
+    if (frame->type == FRAMEIMAGE)
+        warn("Only one image per frame is allowed");
+    char *nl = strchr(image_path, '\n');
+    if (nl) *nl = 0;
+    char filename[PATH_MAX * 2 + 1] = {0};
+
+    if (!strcmp(path_dir, ".") || !path_is_relative(image_path))
+        strcpy(filename, image_path);
+    else
+        snprintf(filename, sizeof filename, "%s/%s", path_dir, image_path);
+
+    frame->type = FRAMEIMAGE;
+    frame->image.texture = IMG_LoadTexture(rend, filename);
+    int imgw = 0, imgh = 0;
+    if (frame->image.texture == NULL)
+        warn("Failed loading image %s: %s", filename, IMG_GetError());
+    else
+        SDL_QueryTexture(frame->image.texture, NULL, NULL, &imgw, &imgh);
+    frame->image.ratio = (float)imgw / imgh;
+}
+
 Slide parse_slide_from_file(char *path) {
     FILE *in;
+    int line;
     if (!strcmp(path, "-")) in = stdin;
     else in = fopen(path, "r");
 
-    char path_dir[PATH_MAX];
-    path_dirname(path, strlen(path), path_dir, sizeof path_dir);
-    size_t path_dir_len = strlen(path_dir);
+    char *path_dir = dirname(strdup(path));
 
     Slide slide = dynarray_new;
     char buf[SSLIDE_BUFSIZE] = {0};
+
     while (true) {
         Page page = dynarray_new;
         while (true) {
+            buf[0] = 0;
             Frame frame = {0};
             char *ret;
 
             /* clear empty lines */
             while ((ret = fgets(buf, sizeof buf, in))) {
+                line++;
                 if (!(buf[0] == '\n' || buf[0] == '#')) {
                     break;
                 }
             }
 
             if (ret == NULL /* EOF */) {
-                if (dynarray_len(slide) == 0) {
+                if (dynarray_len(slide) == 0)
                     warn("Slide has no page, make sure every page is "
                          "terminated with a @");
-                }
-                /* didn't add page to slide, must free now to prevent memory
-                 * leak */
                 dynarray_free(page);
                 return slide;
             }
 
-            /* geo */
-            if (buf[0] == '@') {
-                break;
+            if (!strcmp(buf, "@\n")) {
+                if (simple) goto next_page_skip_current;
+                else goto next_page;
             }
-            if (buf[0] != ';') {
-                panic("No geometry before frame (;x;y;w;h)");
-            }
-            if (buf[1] == 'f') {
-                frame.x = frame.y = 0;
-                frame.w = frame.h = 100;
-            } else if (sscanf(buf, ";%d;%d;%d;%d", &frame.x, &frame.y, &frame.w,
-                              &frame.h) != 4) {
-                panic("Geometry need to be in ;x;y;w;h");
-            }
+            
+            {
+                int valid = 0, full = 0, custom = 0;
+                /* geo */
+                if (!strcmp(buf, ";f\n"))
+                    full = 1;
+                else if (sscanf(buf, ";%d;%d;%d;%d", &frame.x,
+                        &frame.y, &frame.w, &frame.h) == 4)
+                    custom = 1;
+                valid = full || custom;
 
-            while (fgets(buf, sizeof buf, in) != NULL /* EOF */) {
-                if (buf[0] == '%') {
-                    if (frame.type == FRAMEIMAGE) {
-                        warn("Only one image per frame is allowed");
-                    }
-                    char *newline = strchr(buf, '\n');
-                    if (newline != NULL) {
-                        *newline = '\x0';
-                    } else {
-                        warn("Error parsing, don't know why");
-                    }
-                    char filename[PATH_MAX] = {0};
-                    if (in == stdin || !path_is_relative(buf + 1)) {
-                        strcpy(filename, buf + 1);
-                    } else {
-                        long basenamelen = strlen(buf + 1);
-                        memcpy(filename, path_dir, path_dir_len);
-                        filename[path_dir_len] = '/';
-                        memcpy(filename + path_dir_len + 1, buf + 1, basenamelen);
-                        filename[path_dir_len + 1 + basenamelen] = '\x0';
-                    }
+                if (full || !valid) {
+                    frame.x = frame.y = 0;
+                    frame.w = frame.h = 100;
+                }
 
-                    frame.type = FRAMEIMAGE;
-                    frame.image.texture = IMG_LoadTexture(rend, filename);
-                    if (frame.image.texture == NULL) {
-                        warn("Failed loading image %s: %s", filename,
-                             IMG_GetError());
-                    }
-                    int imgw, imgh;
-                    SDL_QueryTexture(frame.image.texture, NULL, NULL, &imgw,
-                                     &imgh);
-                    frame.image.ratio = (float)imgw / imgh;
-                } else if (buf[0] != '\n') {
-                    if (buf[0] == '#') {
-                        continue;
-                    }
-                    if (frame.type == FRAMEIMAGE) {
-                        panic("Text and image is same frame is not allowed");
-                    }
-                    frame.type = FRAMETEXT;
-                    char *bufalloc = strdup(buf);
-                    *strchr(bufalloc, '\n') = 0;
-                    dynarray_push(frame.lines, bufalloc);
-                } else /* empty line, terminating frame */ {
-                    frame.font = FontManager_get_best_font(&font_manager, frame.lines, arrlen(frame.lines));
-                    dynarray_push(page, frame);
-                    break;
+                if (!valid) {
+                    if (simple)
+                        frame_add_line(&frame, buf);
+                    else
+                        warn("Geometry need to be in ;x;y;w;h using "
+                            "fullscreen as fallback (line: %d)", line);
                 }
             }
+
+            while (fgets(buf, sizeof buf, in) != NULL) {
+                line++;
+                if (buf[0] == '%') {
+                    frame_put_image(&frame, buf + 1, path_dir);
+                } else if (buf[0] != '\n') {
+                    frame_add_line(&frame, buf);
+                } else  {
+                    frame.font = FontManager_get_best_font(&font_manager, frame.lines, arrlen(frame.lines));
+                    dynarray_push(page, frame);
+                    if (simple)
+                        goto next_page;
+                    else
+                        goto next_frame;
+                }
+            }
+next_frame:;
         }
+next_page:
         dynarray_push(slide, page);
+next_page_skip_current:;
     }
     if (in != stdin) fclose(in);
     return slide;
