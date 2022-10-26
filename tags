@@ -1,0 +1,301 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/sheep/Documents/code/sslide/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	/p5.9.20220828.0/
+BrowseCallbackProcW	src/tinyfiledialogs.c	/^static int __stdcall BrowseCallbackProcW(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM pData)$/;"	f	typeref:typename:int __stdcall	file:
+BrowseCallbackProcW_enum	src/tinyfiledialogs.c	/^BOOL CALLBACK BrowseCallbackProcW_enum(HWND hWndChild, LPARAM lParam)$/;"	f	typeref:typename:BOOL CALLBACK
+Building instructions	README.md	/^### Building instructions$/;"	S	chapter:sslide
+Context	src/sslide.c	/^} Context;$/;"	t	typeref:struct:__anon65baf3710308	file:
+DYNARRAY_FREE	src/dynarray.h	/^#define DYNARRAY_FREE /;"	d
+DYNARRAY_MALLOC	src/dynarray.h	/^#define DYNARRAY_MALLOC /;"	d
+DYNARRAY_MIN_CAPACITY	src/dynarray.h	/^#define DYNARRAY_MIN_CAPACITY /;"	d
+DYNARRAY_REALLOC	src/dynarray.h	/^#define DYNARRAY_REALLOC /;"	d
+EnumThreadWndProc	src/tinyfiledialogs.c	/^static int __stdcall EnumThreadWndProc(HWND hwnd, LPARAM lParam)$/;"	f	typeref:typename:int __stdcall	file:
+FRAMEIMAGE	src/sslide.c	/^    FRAMEIMAGE,$/;"	e	enum:FrameType	file:
+FRAMETEXT	src/sslide.c	/^    FRAMETEXT,$/;"	e	enum:FrameType	file:
+FRAMETYPECOUNT	src/sslide.c	/^    FRAMETYPECOUNT,$/;"	e	enum:FrameType	file:
+Features	README.md	/^### Features$/;"	S	chapter:sslide
+FontManager	src/font.h	/^} FontManager;$/;"	t	typeref:struct:__anon5b42f3890108
+FontManager_cleanup	src/font.c	/^int FontManager_cleanup(FontManager *manager)$/;"	f	typeref:typename:int
+FontManager_get_best_font	src/font.c	/^char *FontManager_get_best_font(FontManager *manager, char **text, size_t nstr) {$/;"	f	typeref:typename:char *
+FontManager_init	src/font.c	/^int FontManager_init(FontManager *manager)$/;"	f	typeref:typename:int
+Frame	src/sslide.c	/^} Frame;$/;"	t	typeref:struct:__anon65baf3710208	file:
+FrameType	src/sslide.c	/^enum FrameType {$/;"	g	file:
+Hex2RGB	src/tinyfiledialogs.c	/^static void Hex2RGB( char const aHexRGB[8] , unsigned char aoResultRGB[3] )$/;"	f	typeref:typename:void	file:
+Hex2RGBW	src/tinyfiledialogs.c	/^static void Hex2RGBW(wchar_t const aHexRGB[8], unsigned char aoResultRGB[3])$/;"	f	typeref:typename:void	file:
+Image	src/sslide.c	/^} Image;$/;"	t	typeref:struct:__anon65baf3710108	file:
+LOW_MULTIPLE_FILES	src/tinyfiledialogs.c	/^#define LOW_MULTIPLE_FILES /;"	d	file:
+Linux	README.md	/^#### Linux$/;"	t	subsection:sslide""Building instructions
+MAX_MULTIPLE_FILES	src/tinyfiledialogs.c	/^#define MAX_MULTIPLE_FILES /;"	d	file:
+MAX_PATH_OR_CMD	src/tinyfiledialogs.c	/^#define MAX_PATH_OR_CMD /;"	d	file:
+MSYS2 on Windows:	README.md	/^#### MSYS2 on Windows:$/;"	t	subsection:sslide""Building instructions
+NTSTATUS	src/tinyfiledialogs.c	/^    typedef LONG NTSTATUS  ;$/;"	t	function:windowsVersion	typeref:typename:LONG	file:
+Non-Features	README.md	/^### Non-Features$/;"	S	chapter:sslide
+PATH_MAX	src/compat/path.h	/^#define PATH_MAX /;"	d
+PROGRESSBAR_HEIGHT	src/config.h	/^static const int PROGRESSBAR_HEIGHT = 8;$/;"	v	typeref:typename:const int
+PROJECTS	Makefile	/^PROJECTS := sslide$/;"	m
+Page	src/sslide.c	/^typedef Frame *Page;$/;"	t	typeref:typename:Frame *	file:
+RGB2Hex	src/tinyfiledialogs.c	/^static void RGB2Hex( unsigned char const aRGB[3], char aoResultHexRGB[8] )$/;"	f	typeref:typename:void	file:
+RGB2HexW	src/tinyfiledialogs.c	/^static void RGB2HexW( unsigned char const aRGB[3], wchar_t aoResultHexRGB[8])$/;"	f	typeref:typename:void	file:
+RtlGetVersionPtr	src/tinyfiledialogs.c	/^    typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);$/;"	t	function:windowsVersion	typeref:typename:NTSTATUS (WINAPI *)(PRTL_OSVERSIONINFOW)	file:
+SHEEP_DYNARRAY_H	src/dynarray.h	/^#define SHEEP_DYNARRAY_H$/;"	d
+SHEEP_DYNARRAY_IMPLEMENTATION	src/sslide.c	/^#define SHEEP_DYNARRAY_IMPLEMENTATION$/;"	d	file:
+SHEEP_LOG_H	src/log.h	/^#define SHEEP_LOG_H$/;"	d
+SHEEP_LOG_IMPLEMENTATION	src/sslide.c	/^#define SHEEP_LOG_IMPLEMENTATION$/;"	d	file:
+SHEEP_XMALLOC_H	src/xmalloc.h	/^#define SHEEP_XMALLOC_H$/;"	d
+SHEEP_XMALLOC_IMPLEMENTATION	src/sslide.c	/^#define SHEEP_XMALLOC_IMPLEMENTATION$/;"	d	file:
+SILENT	Makefile	/^  SILENT = @$/;"	m
+SLASH	src/tinyfiledialogs.c	/^ #define SLASH /;"	d	file:
+SSLIDE_BUFSIZE	src/config.h	/^#define SSLIDE_BUFSIZE /;"	d
+SSLIDE_CONFIG_H	src/config.h	/^#define SSLIDE_CONFIG_H$/;"	d
+Simple mode	README.md	/^##### Simple mode$/;"	T	subsection:sslide""Features
+Slide	src/sslide.c	/^typedef Page *Slide;$/;"	t	typeref:typename:Page *	file:
+TINYFD_NOCCSUNICODE	src/tinyfiledialogs.c	/^ #define TINYFD_NOCCSUNICODE$/;"	d	file:
+TINYFILEDIALOGS_H	src/tinyfiledialogs.h	/^#define TINYFILEDIALOGS_H$/;"	d
+VERSION	src/sslide.c	/^#define VERSION /;"	d	file:
+Visual Studio	README.md	/^#### Visual Studio$/;"	t	subsection:sslide""Building instructions
+WC_ERR_INVALID_CHARS	src/tinyfiledialogs.c	/^#define WC_ERR_INVALID_CHARS /;"	d	file:
+_GNU_SOURCE	src/tinyfiledialogs.c	/^ #define _GNU_SOURCE /;"	d	file:
+_POSIX_C_SOURCE	src/sslide.c	/^#define _POSIX_C_SOURCE /;"	d	file:
+_POSIX_C_SOURCE	src/tinyfiledialogs.c	/^#define _POSIX_C_SOURCE /;"	d	file:
+_WIN32_WINNT	src/tinyfiledialogs.c	/^  #define _WIN32_WINNT /;"	d	file:
+__FL__	src/log.h	/^#define __FL__ /;"	d
+__anon5b42f3890108	src/font.h	/^typedef struct {$/;"	s
+__anon65baf3710108	src/sslide.c	/^typedef struct {$/;"	s	file:
+__anon65baf3710208	src/sslide.c	/^typedef struct {$/;"	s	file:
+__anon65baf3710308	src/sslide.c	/^typedef struct {$/;"	s	file:
+__stderr_log	src/log.h	/^__stderr_log(const char *type, const char *file$/;"	f	typeref:typename:void
+_dynarray_info	src/dynarray.h	/^struct _dynarray_info {$/;"	s
+_getch	src/tinyfiledialogs.c	/^  #define _getch /;"	d	file:
+afplayPresent	src/tinyfiledialogs.c	/^static int afplayPresent(void)$/;"	f	typeref:typename:int	file:
+all	Makefile	/^all: $(PROJECTS)$/;"	t
+all_font	src/font.h	/^    FcFontSet *all_font;$/;"	m	struct:__anon5b42f3890108	typeref:typename:FcFontSet *
+arrback	src/dynarray.h	/^#define arrback /;"	d
+arrcap	src/dynarray.h	/^#define arrcap /;"	d
+arrdel	src/dynarray.h	/^#define arrdel /;"	d
+arrfree	src/dynarray.h	/^#define arrfree /;"	d
+arrins	src/dynarray.h	/^#define arrins /;"	d
+arrlen	src/dynarray.h	/^#define arrlen /;"	d
+arrnew	src/dynarray.h	/^#define arrnew /;"	d
+arrpop	src/dynarray.h	/^#define arrpop /;"	d
+arrpush	src/dynarray.h	/^#define arrpush /;"	d
+arrsetcap	src/dynarray.h	/^#define arrsetcap /;"	d
+arrsetlen	src/dynarray.h	/^#define arrsetlen /;"	d
+beepPresent	src/tinyfiledialogs.c	/^static int beepPresent(void)$/;"	f	typeref:typename:int	file:
+beepexePresent	src/tinyfiledialogs.c	/^static int beepexePresent()$/;"	f	typeref:typename:int	file:
+bg	src/config.h	/^static const SDL_Color bg = { 255, 255, 255, 255 };$/;"	v	typeref:typename:const SDL_Color
+capacity	src/dynarray.h	/^    long capacity; \/* dynamic array capacity *\/$/;"	m	struct:_dynarray_info	typeref:typename:long
+check_alloc	src/xmalloc.h	/^void *check_alloc(void *ptr) {$/;"	f	typeref:typename:void *
+clean	Makefile	/^clean:$/;"	t
+cleanup	src/sslide.c	/^void cleanup() {$/;"	f	typeref:typename:void
+colorChooserWinGui	src/tinyfiledialogs.c	/^static char * colorChooserWinGui($/;"	f	typeref:typename:char *	file:
+config	Makefile	/^  config=debug$/;"	m
+detectPresence	src/tinyfiledialogs.c	/^static int detectPresence( char const * aExecutable )$/;"	f	typeref:typename:int	file:
+dialogName	src/tinyfiledialogs.c	/^static char * dialogName(void)$/;"	f	typeref:typename:char *	file:
+dialogNameOnly	src/tinyfiledialogs.c	/^static char * dialogNameOnly(void)$/;"	f	typeref:typename:char *	file:
+dialogPresent	src/tinyfiledialogs.c	/^static int dialogPresent(void)$/;"	f	typeref:typename:int	file:
+dirExists	src/tinyfiledialogs.c	/^static int dirExists( char const * aDirPath )$/;"	f	typeref:typename:int	file:
+dirExists	src/tinyfiledialogs.c	/^static int dirExists(char const * aDirPath)$/;"	f	typeref:typename:int	file:
+drawframe	src/sslide.c	/^void drawframe(Frame frame) {$/;"	f	typeref:typename:void
+drawpage	src/sslide.c	/^void drawpage(Page page) {$/;"	f	typeref:typename:void
+drawprogressbar	src/sslide.c	/^void drawprogressbar(float progress \/* value between 0 and 1 *\/) {$/;"	f	typeref:typename:void
+dynarray_back	src/dynarray.h	/^#define dynarray_back(/;"	d
+dynarray_cap	src/dynarray.h	/^#define dynarray_cap(/;"	d
+dynarray_del	src/dynarray.h	/^#define dynarray_del(/;"	d
+dynarray_ensure_empty	src/dynarray.h	/^#define dynarray_ensure_empty(/;"	d
+dynarray_first_2n_bigger_than	src/dynarray.h	/^static long dynarray_first_2n_bigger_than(long x) {$/;"	f	typeref:typename:long
+dynarray_free	src/dynarray.h	/^#define dynarray_free(/;"	d
+dynarray_growf	src/dynarray.h	/^static void *dynarray_growf(void *a, long cap, long membsize) {$/;"	f	typeref:typename:void *
+dynarray_growf_wrapper	src/dynarray.h	/^#define dynarray_growf_wrapper /;"	d
+dynarray_growf_wrapper	src/dynarray.h	/^static T *dynarray_growf_wrapper(T *a, long cap, long membsize) {$/;"	f	typeref:typename:T *
+dynarray_info	src/dynarray.h	/^#define dynarray_info(/;"	d
+dynarray_ins	src/dynarray.h	/^#define dynarray_ins(/;"	d
+dynarray_len	src/dynarray.h	/^#define dynarray_len(/;"	d
+dynarray_new	src/dynarray.h	/^#define dynarray_new /;"	d
+dynarray_pop	src/dynarray.h	/^#define dynarray_pop(/;"	d
+dynarray_push	src/dynarray.h	/^#define dynarray_push(/;"	d
+dynarray_setcap	src/dynarray.h	/^#define dynarray_setcap(/;"	d
+dynarray_setlen	src/dynarray.h	/^#define dynarray_setlen(/;"	d
+ensureFilesExist	src/tinyfiledialogs.c	/^static char * ensureFilesExist(char * aDestination,$/;"	f	typeref:typename:char *	file:
+ensureFinalSlash	src/tinyfiledialogs.c	/^static void ensureFinalSlash( char * aioString )$/;"	f	typeref:typename:void	file:
+execute	premake5.lua	/^    execute     = function ()$/;"	f
+fc_config	src/font.h	/^    FcConfig *fc_config;$/;"	m	struct:__anon5b42f3890108	typeref:typename:FcConfig *
+fg	src/config.h	/^static const SDL_Color fg = { 0,   0,   0,   255 };$/;"	v	typeref:typename:const SDL_Color
+fileExists	src/tinyfiledialogs.c	/^static int fileExists( char const * aFilePathAndName )$/;"	f	typeref:typename:int	file:
+fileExists	src/tinyfiledialogs.c	/^static int fileExists(char const * aFilePathAndName)$/;"	f	typeref:typename:int	file:
+filenameValid	src/tinyfiledialogs.c	/^static int filenameValid( char const * aFileNameWithoutPath )$/;"	f	typeref:typename:int	file:
+font	src/sslide.c	/^    char *font;$/;"	m	struct:__anon65baf3710208	typeref:typename:char *	file:
+font_manager	src/sslide.c	/^static FontManager font_manager;$/;"	v	typeref:typename:FontManager	file:
+frame_add_line	src/sslide.c	/^void frame_add_line(Frame *frame, char *line) {$/;"	f	typeref:typename:void
+frame_put_image	src/sslide.c	/^void frame_put_image(Frame *frame, char *image_path, char *path_dir) {$/;"	f	typeref:typename:void
+gPython2Name	src/tinyfiledialogs.c	/^static char gPython2Name[16];$/;"	v	typeref:typename:char[16]	file:
+gPython3Name	src/tinyfiledialogs.c	/^static char gPython3Name[16];$/;"	v	typeref:typename:char[16]	file:
+gPythonName	src/tinyfiledialogs.c	/^static char gPythonName[16];$/;"	v	typeref:typename:char[16]	file:
+gTitle	src/tinyfiledialogs.c	/^static char gTitle[]="missing software! (we will try basic console input)";$/;"	v	typeref:typename:char[]	file:
+gWarningDisplayed	src/tinyfiledialogs.c	/^static int gWarningDisplayed = 0 ;$/;"	v	typeref:typename:int	file:
+gdialogPresent	src/tinyfiledialogs.c	/^static int gdialogPresent(void)$/;"	f	typeref:typename:int	file:
+getCurDir	src/tinyfiledialogs.c	/^static char * getCurDir(void)$/;"	f	typeref:typename:char *	file:
+getLastName	src/tinyfiledialogs.c	/^static char * getLastName($/;"	f	typeref:typename:char *	file:
+getLastNameW	src/tinyfiledialogs.c	/^static wchar_t * getLastNameW($/;"	f	typeref:typename:wchar_t *	file:
+getMajorMinorPatch	src/tinyfiledialogs.c	/^static int * getMajorMinorPatch( char const * aExecutable )$/;"	f	typeref:typename:int *	file:
+getPathWithoutFinalSlash	src/tinyfiledialogs.c	/^static char * getPathWithoutFinalSlash($/;"	f	typeref:typename:char *	file:
+getPathWithoutFinalSlashW	src/tinyfiledialogs.c	/^static wchar_t * getPathWithoutFinalSlashW($/;"	f	typeref:typename:wchar_t *	file:
+getVersion	src/tinyfiledialogs.c	/^static char * getVersion( char const * aExecutable ) \/*version must be first numeral*\/$/;"	f	typeref:typename:char *	file:
+getenvDISPLAY	src/tinyfiledialogs.c	/^static int getenvDISPLAY(void)$/;"	f	typeref:typename:int	file:
+getfontsize	src/sslide.c	/^int getfontsize(Frame frame, int *width, int *height, char *path) {$/;"	f	typeref:typename:int
+gmessagePresent	src/tinyfiledialogs.c	/^static int gmessagePresent(void)$/;"	f	typeref:typename:int	file:
+graphicMode	src/tinyfiledialogs.c	/^static int graphicMode(void)$/;"	f	typeref:typename:int	file:
+gxmessagePresent	src/tinyfiledialogs.c	/^static int gxmessagePresent(void)$/;"	f	typeref:typename:int	file:
+h	src/sslide.c	/^    int x, y, w, h;$/;"	m	struct:__anon65baf3710208	typeref:typename:int	file:
+h	src/sslide.c	/^static int w = 800, h = 600;$/;"	v	typeref:typename:int	file:
+height	src/sslide.c	/^    int height;$/;"	m	struct:__anon65baf3710308	typeref:typename:int	file:
+help	Makefile	/^help:$/;"	t
+hiddenConsoleW	src/tinyfiledialogs.c	/^static void hiddenConsoleW(wchar_t const * aString, wchar_t const * aDialogTitle, int aInFront)$/;"	f	typeref:typename:void	file:
+image	src/sslide.c	/^    Image image;$/;"	m	struct:__anon65baf3710208	typeref:typename:Image	file:
+info	src/log.h	/^#define info(/;"	d
+infoerr	src/log.h	/^#define infoerr(/;"	d
+init	src/sslide.c	/^void init() {$/;"	f	typeref:typename:void
+inputBoxWinConsole	src/tinyfiledialogs.c	/^static int inputBoxWinConsole($/;"	f	typeref:typename:int	file:
+inputBoxWinGui	src/tinyfiledialogs.c	/^static int inputBoxWinGui($/;"	f	typeref:typename:int	file:
+invert	src/sslide.c	/^    bool invert;$/;"	m	struct:__anon65baf3710308	typeref:typename:bool	file:
+invert	src/sslide.c	/^static bool invert = false;$/;"	v	typeref:typename:bool	file:
+isDialogVersionBetter09b	src/tinyfiledialogs.c	/^int isDialogVersionBetter09b(void)$/;"	f	typeref:typename:int
+isTerminalRunning	src/tinyfiledialogs.c	/^static int isTerminalRunning(void)$/;"	f	typeref:typename:int	file:
+length	src/dynarray.h	/^    long length;   \/* dynamic array length *\/$/;"	m	struct:_dynarray_info	typeref:typename:long
+line_spacing	src/sslide.c	/^    int line_spacing;$/;"	m	struct:__anon65baf3710308	typeref:typename:int	file:
+lines	src/sslide.c	/^    char **lines;$/;"	m	struct:__anon65baf3710208	typeref:typename:char **	file:
+linespacing	src/sslide.c	/^static int linespacing = 3;$/;"	v	typeref:typename:int	file:
+main	src/sslide.c	/^int main(int argc, char **argv) {$/;"	f	typeref:typename:int
+memrchr	src/compat/mem.c	/^void *memrchr(const void *s, int c, size_t n)$/;"	f	typeref:typename:void *
+messageBoxWinConsole	src/tinyfiledialogs.c	/^static int messageBoxWinConsole($/;"	f	typeref:typename:int	file:
+messageBoxWinGui	src/tinyfiledialogs.c	/^static int messageBoxWinGui($/;"	f	typeref:typename:int	file:
+notifyWinGui	src/tinyfiledialogs.c	/^static int notifyWinGui($/;"	f	typeref:typename:int	file:
+notifysendPresent	src/tinyfiledialogs.c	/^static int notifysendPresent(void)$/;"	f	typeref:typename:int	file:
+openFileDialogWinConsole	src/tinyfiledialogs.c	/^static char * openFileDialogWinConsole($/;"	f	typeref:typename:char *	file:
+openFileDialogWinGui	src/tinyfiledialogs.c	/^static char * openFileDialogWinGui($/;"	f	typeref:typename:char *	file:
+osascriptPresent	src/tinyfiledialogs.c	/^static int osascriptPresent(void)$/;"	f	typeref:typename:int	file:
+osx9orBetter	src/tinyfiledialogs.c	/^static int osx9orBetter(void)$/;"	f	typeref:typename:int	file:
+pactlPresent	src/tinyfiledialogs.c	/^static int pactlPresent(void)$/;"	f	typeref:typename:int	file:
+panic	src/log.h	/^#define panic(/;"	d
+panicerr	src/log.h	/^#define panicerr(/;"	d
+parse_slide_from_file	src/sslide.c	/^Slide parse_slide_from_file(char *path, bool simple) {$/;"	f	typeref:typename:Slide
+path_basename	src/compat/path.c	/^int path_basename(const char *path, int path_size, char *result, int result_size) {$/;"	f	typeref:typename:int
+path_dirname	src/compat/path.c	/^int path_dirname(const char *path, int path_size, char *result, int result_size) {$/;"	f	typeref:typename:int
+path_home_dir	src/compat/path.c	/^char *path_home_dir(void) {$/;"	f	typeref:typename:char *
+path_is_relative	src/compat/path.c	/^bool path_is_relative(char *path) {$/;"	f	typeref:typename:bool
+perlPresent	src/tinyfiledialogs.c	/^static int perlPresent(void)$/;"	f	typeref:typename:int	file:
+playPresent	src/tinyfiledialogs.c	/^static int playPresent()$/;"	f	typeref:typename:int	file:
+powershellPresent	src/tinyfiledialogs.c	/^static int powershellPresent(void)$/;"	f	typeref:typename:int	file:
+progress_bar	src/sslide.c	/^    bool progress_bar;$/;"	m	struct:__anon65baf3710308	typeref:typename:bool	file:
+progressbar	src/sslide.c	/^static bool progressbar = true;$/;"	v	typeref:typename:bool	file:
+python2Present	src/tinyfiledialogs.c	/^static int python2Present(void)$/;"	f	typeref:typename:int	file:
+python3Present	src/tinyfiledialogs.c	/^static int python3Present(void)$/;"	f	typeref:typename:int	file:
+pythonDbusPresent	src/tinyfiledialogs.c	/^static int pythonDbusPresent(void)$/;"	f	typeref:typename:int	file:
+quoteDetectedW	src/tinyfiledialogs.c	/^static int quoteDetectedW(wchar_t const * aString)$/;"	f	typeref:typename:int	file:
+ratio	src/sslide.c	/^    float ratio;$/;"	m	struct:__anon65baf3710108	typeref:typename:float	file:
+rend	src/sslide.c	/^static SDL_Renderer *rend;$/;"	v	typeref:typename:SDL_Renderer *	file:
+renderer	src/sslide.c	/^    SDL_Renderer *renderer;$/;"	m	struct:__anon65baf3710308	typeref:typename:SDL_Renderer *	file:
+replaceChr	src/tinyfiledialogs.c	/^static void replaceChr(char * aString, char aOldChr, char aNewChr)$/;"	f	typeref:typename:void	file:
+replaceWchar	src/tinyfiledialogs.c	/^static void replaceWchar(wchar_t * aString,$/;"	f	typeref:typename:void	file:
+run	src/sslide.c	/^void run() {$/;"	f	typeref:typename:void
+saveFileDialogWinConsole	src/tinyfiledialogs.c	/^static char * saveFileDialogWinConsole($/;"	f	typeref:typename:char *	file:
+saveFileDialogWinGui	src/tinyfiledialogs.c	/^static char * saveFileDialogWinGui($/;"	f	typeref:typename:char *	file:
+selectFolderDialogWinConsole	src/tinyfiledialogs.c	/^static char * selectFolderDialogWinConsole($/;"	f	typeref:typename:char *	file:
+selectFolderDialogWinGui	src/tinyfiledialogs.c	/^static char * selectFolderDialogWinGui($/;"	f	typeref:typename:char *	file:
+sigHandler	src/tinyfiledialogs.c	/^static void sigHandler(int signum)$/;"	f	typeref:typename:void	file:
+sizeMbcs	src/tinyfiledialogs.c	/^static int sizeMbcs(wchar_t const * aMbcsString)$/;"	f	typeref:typename:int	file:
+sizeUtf16From8	src/tinyfiledialogs.c	/^static int sizeUtf16From8(char const * aUtf8string)$/;"	f	typeref:typename:int	file:
+sizeUtf16FromMbcs	src/tinyfiledialogs.c	/^static int sizeUtf16FromMbcs(char const * aMbcsString)$/;"	f	typeref:typename:int	file:
+sizeUtf8	src/tinyfiledialogs.c	/^static int sizeUtf8(wchar_t const * aUtf16string)$/;"	f	typeref:typename:int	file:
+slide	src/sslide.c	/^    Slide slide;$/;"	m	struct:__anon65baf3710308	typeref:typename:Slide	file:
+slide	src/sslide.c	/^static Slide slide = dynarray_new;$/;"	v	typeref:typename:Slide	file:
+speakertestPresent	src/tinyfiledialogs.c	/^static int speakertestPresent(void)$/;"	f	typeref:typename:int	file:
+sslide	Makefile	/^sslide:$/;"	t
+sslide	README.md	/^# sslide$/;"	c
+sslide_config	Makefile	/^  sslide_config = debug$/;"	m
+sslide_config	Makefile	/^  sslide_config = mingw$/;"	m
+sslide_config	Makefile	/^  sslide_config = release$/;"	m
+strdup	src/compat/mem.c	/^char *strdup(const char *s)$/;"	f	typeref:typename:char *
+terminalName	src/tinyfiledialogs.c	/^static char * terminalName(void)$/;"	f	typeref:typename:char *	file:
+texture	src/sslide.c	/^    SDL_Texture *texture;$/;"	m	struct:__anon65baf3710108	typeref:typename:SDL_Texture *	file:
+tfd_isDarwin	src/tinyfiledialogs.c	/^int tfd_isDarwin(void)$/;"	f	typeref:typename:int
+tfd_kdialogPresent	src/tinyfiledialogs.c	/^int tfd_kdialogPresent(void)$/;"	f	typeref:typename:int
+tfd_matedialogPresent	src/tinyfiledialogs.c	/^int tfd_matedialogPresent(void)$/;"	f	typeref:typename:int
+tfd_qarmaPresent	src/tinyfiledialogs.c	/^int tfd_qarmaPresent(void)$/;"	f	typeref:typename:int
+tfd_quoteDetected	src/tinyfiledialogs.c	/^int tfd_quoteDetected(char const * aString)$/;"	f	typeref:typename:int
+tfd_replaceSubStr	src/tinyfiledialogs.c	/^void tfd_replaceSubStr( char const * aSource, char const * aOldSubStr,$/;"	f	typeref:typename:void
+tfd_shellementaryPresent	src/tinyfiledialogs.c	/^int tfd_shellementaryPresent(void)$/;"	f	typeref:typename:int
+tfd_xpropPresent	src/tinyfiledialogs.c	/^int tfd_xpropPresent(void)$/;"	f	typeref:typename:int
+tfd_yadPresent	src/tinyfiledialogs.c	/^int tfd_yadPresent(void)$/;"	f	typeref:typename:int
+tfd_zenity3Present	src/tinyfiledialogs.c	/^int tfd_zenity3Present(void)$/;"	f	typeref:typename:int
+tfd_zenityPresent	src/tinyfiledialogs.c	/^int tfd_zenityPresent(void)$/;"	f	typeref:typename:int
+tinyfd_allowCursesDialogs	src/tinyfiledialogs.c	/^int tinyfd_allowCursesDialogs = 0 ; \/* 0 (default) or 1 *\/$/;"	v	typeref:typename:int
+tinyfd_assumeGraphicDisplay	src/tinyfiledialogs.c	/^int tinyfd_assumeGraphicDisplay = 0; \/* 0 (default) or 1  *\/$/;"	v	typeref:typename:int
+tinyfd_beep	src/tinyfiledialogs.c	/^void tinyfd_beep(void)$/;"	f	typeref:typename:void
+tinyfd_colorChooser	src/tinyfiledialogs.c	/^char * tinyfd_colorChooser($/;"	f	typeref:typename:char *
+tinyfd_colorChooserW	src/tinyfiledialogs.c	/^wchar_t * tinyfd_colorChooserW($/;"	f	typeref:typename:wchar_t *
+tinyfd_forceConsole	src/tinyfiledialogs.c	/^int tinyfd_forceConsole = 0 ; \/* 0 (default) or 1 *\/$/;"	v	typeref:typename:int
+tinyfd_getGlobalChar	src/tinyfiledialogs.c	/^char const * tinyfd_getGlobalChar(char const * aCharVariableName) \/* to be called from C# (you /;"	f	typeref:typename:char const *
+tinyfd_getGlobalInt	src/tinyfiledialogs.c	/^int tinyfd_getGlobalInt(char const * aIntVariableName) \/* to be called from C# (you don't need /;"	f	typeref:typename:int
+tinyfd_inputBox	src/tinyfiledialogs.c	/^char * tinyfd_inputBox($/;"	f	typeref:typename:char *
+tinyfd_inputBoxW	src/tinyfiledialogs.c	/^wchar_t * tinyfd_inputBoxW($/;"	f	typeref:typename:wchar_t *
+tinyfd_mbcsTo16	src/tinyfiledialogs.c	/^wchar_t* tinyfd_mbcsTo16(char const* aMbcsString)$/;"	f	typeref:typename:wchar_t *
+tinyfd_mbcsTo8	src/tinyfiledialogs.c	/^char * tinyfd_mbcsTo8(char const * aMbcsString)$/;"	f	typeref:typename:char *
+tinyfd_messageBox	src/tinyfiledialogs.c	/^int tinyfd_messageBox($/;"	f	typeref:typename:int
+tinyfd_messageBoxW	src/tinyfiledialogs.c	/^int tinyfd_messageBoxW($/;"	f	typeref:typename:int
+tinyfd_needs	src/tinyfiledialogs.c	/^char tinyfd_needs[] = "\\$/;"	v	typeref:typename:char[]
+tinyfd_notifyPopup	src/tinyfiledialogs.c	/^int tinyfd_notifyPopup($/;"	f	typeref:typename:int
+tinyfd_notifyPopupW	src/tinyfiledialogs.c	/^int tinyfd_notifyPopupW($/;"	f	typeref:typename:int
+tinyfd_openFileDialog	src/tinyfiledialogs.c	/^char * tinyfd_openFileDialog($/;"	f	typeref:typename:char *
+tinyfd_openFileDialogW	src/tinyfiledialogs.c	/^wchar_t * tinyfd_openFileDialogW($/;"	f	typeref:typename:wchar_t *
+tinyfd_response	src/tinyfiledialogs.c	/^char tinyfd_response[1024];$/;"	v	typeref:typename:char[1024]
+tinyfd_saveFileDialog	src/tinyfiledialogs.c	/^char * tinyfd_saveFileDialog($/;"	f	typeref:typename:char *
+tinyfd_saveFileDialogW	src/tinyfiledialogs.c	/^wchar_t * tinyfd_saveFileDialogW($/;"	f	typeref:typename:wchar_t *
+tinyfd_selectFolderDialog	src/tinyfiledialogs.c	/^char * tinyfd_selectFolderDialog($/;"	f	typeref:typename:char *
+tinyfd_selectFolderDialogW	src/tinyfiledialogs.c	/^wchar_t * tinyfd_selectFolderDialogW($/;"	f	typeref:typename:wchar_t *
+tinyfd_setGlobalInt	src/tinyfiledialogs.c	/^int tinyfd_setGlobalInt(char const * aIntVariableName, int aValue) \/* to be called from C# (you/;"	f	typeref:typename:int
+tinyfd_silent	src/tinyfiledialogs.c	/^int tinyfd_silent = 1 ; \/* 1 (default) or 0 : on unix, hide errors and warnings from called dia/;"	v	typeref:typename:int
+tinyfd_utf16to8	src/tinyfiledialogs.c	/^char * tinyfd_utf16to8(wchar_t const * aUtf16string)$/;"	f	typeref:typename:char *
+tinyfd_utf16toMbcs	src/tinyfiledialogs.c	/^char * tinyfd_utf16toMbcs(wchar_t const * aUtf16string)$/;"	f	typeref:typename:char *
+tinyfd_utf8to16	src/tinyfiledialogs.c	/^wchar_t * tinyfd_utf8to16(char const * aUtf8string)$/;"	f	typeref:typename:wchar_t *
+tinyfd_utf8toMbcs	src/tinyfiledialogs.c	/^char * tinyfd_utf8toMbcs(char const * aUtf8string)$/;"	f	typeref:typename:char *
+tinyfd_verbose	src/tinyfiledialogs.c	/^int tinyfd_verbose = 0 ; \/* on unix: prints the command line calls *\/$/;"	v	typeref:typename:int
+tinyfd_version	src/tinyfiledialogs.c	/^char tinyfd_version[8] = "3.8.8";$/;"	v	typeref:typename:char[8]
+tinyfd_winUtf8	src/tinyfiledialogs.c	/^int tinyfd_winUtf8 = 1; \/* on windows char strings can be 1:UTF-8(default) or 0:MBCS *\/$/;"	v	typeref:typename:int
+tkinter2Present	src/tinyfiledialogs.c	/^static int tkinter2Present(void)$/;"	f	typeref:typename:int	file:
+tkinter3Present	src/tinyfiledialogs.c	/^static int tkinter3Present(void)$/;"	f	typeref:typename:int	file:
+tryCommand	src/tinyfiledialogs.c	/^static int tryCommand( char const * aCommand )$/;"	f	typeref:typename:int	file:
+type	src/sslide.c	/^    int type;$/;"	m	struct:__anon65baf3710208	typeref:typename:int	file:
+uh	src/sslide.c	/^#define uh /;"	d	file:
+uw	src/sslide.c	/^#define uw /;"	d	file:
+w	src/sslide.c	/^    int x, y, w, h;$/;"	m	struct:__anon65baf3710208	typeref:typename:int	file:
+w	src/sslide.c	/^static int w = 800, h = 600;$/;"	v	typeref:typename:int	file:
+warn	src/log.h	/^#define warn(/;"	d
+warnerr	src/log.h	/^#define warnerr(/;"	d
+whiptailPresent	src/tinyfiledialogs.c	/^static int whiptailPresent(void)$/;"	f	typeref:typename:int	file:
+whiptailPresentOnly	src/tinyfiledialogs.c	/^static int whiptailPresentOnly(void)$/;"	f	typeref:typename:int	file:
+width	src/sslide.c	/^    int width;$/;"	m	struct:__anon65baf3710308	typeref:typename:int	file:
+win	src/sslide.c	/^static SDL_Window *win;$/;"	v	typeref:typename:SDL_Window *	file:
+window	src/sslide.c	/^    SDL_Window *window;$/;"	m	struct:__anon65baf3710308	typeref:typename:SDL_Window *	file:
+windowsVersion	src/tinyfiledialogs.c	/^static int windowsVersion(void)$/;"	f	typeref:typename:int	file:
+wipefile	src/tinyfiledialogs.c	/^static void wipefile(char const * aFilename)$/;"	f	typeref:typename:void	file:
+wipefileW	src/tinyfiledialogs.c	/^static void wipefileW(wchar_t const * aFilename)$/;"	f	typeref:typename:void	file:
+writeUtf8	src/tinyfiledialogs.c	/^static void writeUtf8( char const * aUtf8String )$/;"	f	typeref:typename:void	file:
+x	src/sslide.c	/^    int x, y, w, h;$/;"	m	struct:__anon65baf3710208	typeref:typename:int	file:
+x_margin	src/config.h	/^static const int x_margin = 10;$/;"	v	typeref:typename:const int
+x_margin_px	src/sslide.c	/^#define x_margin_px /;"	d	file:
+xcalloc	src/xmalloc.h	/^void *xcalloc(size_t nmemb, size_t size) {$/;"	f	typeref:typename:void *
+xdialogPresent	src/tinyfiledialogs.c	/^static int xdialogPresent(void)$/;"	f	typeref:typename:int	file:
+xmalloc	src/xmalloc.h	/^void *xmalloc(size_t size) {$/;"	f	typeref:typename:void *
+xmessagePresent	src/tinyfiledialogs.c	/^static int xmessagePresent(void)$/;"	f	typeref:typename:int	file:
+xrealloc	src/xmalloc.h	/^void *xrealloc(void *ptr, size_t size) {$/;"	f	typeref:typename:void *
+y	src/sslide.c	/^    int x, y, w, h;$/;"	m	struct:__anon65baf3710208	typeref:typename:int	file:
+y_margin	src/config.h	/^static const int y_margin = 5;$/;"	v	typeref:typename:const int
+y_margin_px	src/sslide.c	/^#define y_margin_px /;"	d	file:

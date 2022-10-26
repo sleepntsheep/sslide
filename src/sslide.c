@@ -32,10 +32,7 @@
 #include "compat/path.h"
 #include "compat/mem.h"
 
-
 #define VERSION "0.0.7"
-
-#define SHEEP_PROFILER_IMPLEMENTATION
 
 enum FrameType {
     FRAMETEXT,
@@ -96,26 +93,25 @@ void frame_put_image(Frame *, char *, char *);
 
 int main(int argc, char **argv) {
     char *srcfile = NULL;
-    static bool simple = false;
+    bool simple = false;
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-v") == 0) {
+        if (!strcmp(argv[i], "-v")) {
             printf("%s Version: %s\n", argv[0], VERSION);
             exit(0);
         }
-        else if (strcmp(argv[i], "-s") == 0) {
+        else if (!strcmp(argv[i], "-s")) {
             simple = true;
         }
         else {
-            if (strcmp(argv[i], "-") == 0)
+            if (!strcmp(argv[i], "-"))
                 info("Reading from stdin");
             srcfile = argv[i];
         }
     } 
 
-    if (!srcfile) {
+    if (!srcfile)
         srcfile = (char *)tinyfd_openFileDialog("Open slide", path_home_dir(), 0, NULL, NULL, false);
-    }
 
     if (!srcfile) 
         fprintf(stderr, "Usage: %s [OPTIONS] <FILE>\n", argv[0]);
@@ -157,7 +153,6 @@ int getfontsize(Frame frame, int *width, int *height, char *path) {
     }
     return result;
 }
-
 void init() {
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
@@ -215,14 +210,13 @@ void drawframe(Frame frame) {
                 SDL_CreateTextureFromSurface(rend, textsurface);
             int linew, lineh;
             SDL_QueryTexture(texttexture, NULL, NULL, &linew, &lineh);
-            SDL_Rect bound = {
+            SDL_RenderCopy(rend, texttexture, NULL, &(SDL_Rect) {
                 .x = frame.x * uw / 100 + xoffset + x_margin_px,
                 .y = frame.y * uh / 100 + (line_height + linespacing) * i + yoffset
                     + y_margin_px,
                 .w = linew,
                 .h = lineh,
-            };
-            SDL_RenderCopy(rend, texttexture, NULL, &bound);
+			});
             SDL_FreeSurface(textsurface);
             SDL_DestroyTexture(texttexture);
         }
@@ -254,9 +248,8 @@ void drawpage(Page page) {
     SDL_Color realbg = invert ? fg : bg;
     SDL_SetRenderDrawColor(rend, realbg.r, realbg.g, realbg.b, realbg.a);
     SDL_RenderClear(rend);
-    for (long i = 0; i < dynarray_len(page); i++) {
+    for (long i = 0; i < dynarray_len(page); i++)
         drawframe(page[i]);
-    }
 }
 
 void drawprogressbar(float progress /* value between 0 and 1 */) {
@@ -342,9 +335,8 @@ void run() {
 
         if (redraw) {
             drawpage(slide[pagei]);
-            if (progressbar) {
+            if (progressbar)
                 drawprogressbar((float)(pagei + 1) / dynarray_len(slide));
-            }
             SDL_RenderPresent(rend);
         }
         SDL_Delay(15);
@@ -387,35 +379,31 @@ void frame_put_image(Frame *frame, char *image_path, char *path_dir) {
 }
 
 Slide parse_slide_from_file(char *path, bool simple) {
-    FILE *in = NULL;
+    FILE *in = stdin;
     int line = 0;
 
-    if (!strcmp(path, "-"))
-        in = stdin;
-    else
+    if (strcmp(path, "-"))
         in = fopen(path, "r");
 
     if (!in)
-        panic("Failed to open file");
+        panic("Failed opening file");
 
     char *path_dir = dirname(strdup(path));
 
     Slide slide = dynarray_new;
     char buf[SSLIDE_BUFSIZE] = {0};
 
+
     for (;;) {
         Page page = dynarray_new;
         for (;;) {
             Frame frame = {0};
-            char *ret;
+            char *ret = NULL;
 
             /* clear empty lines */
-            while ((ret = fgets(buf, sizeof buf, in))) {
-                line++;
-                if (!(buf[0] == '\n' || buf[0] == '#')) {
+			for (; (ret = fgets(buf, sizeof buf, in)); line++)
+                if (!(buf[0] == '\n' || buf[0] == '#'))
                     break;
-                }
-            }
 
             if (ret == NULL /* EOF */) {
                 if (dynarray_len(slide) == 0)
@@ -431,21 +419,16 @@ Slide parse_slide_from_file(char *path, bool simple) {
             }
             
             {
-                int valid = 0, full = 0, custom = 0;
-                /* geo */
-                if (!strcmp(buf, ";f\n"))
-                    full = 1;
-                else if (sscanf(buf, ";%d;%d;%d;%d", &frame.x,
-                        &frame.y, &frame.w, &frame.h) == 4)
-                    custom = 1;
-                valid = full || custom;
+                bool full = strcmp(buf, ";f\n") == 0;
+				bool custom = sscanf(buf, ";%d;%d;%d;%d", &frame.x,
+                        &frame.y, &frame.w, &frame.h) == 4;
 
-                if (full || !valid) {
+                if (full || !custom) {
                     frame.x = frame.y = 0;
                     frame.w = frame.h = 100;
                 }
 
-                if (!valid) {
+                if (!full && !custom) {
                     if (simple)
                         frame_add_line(&frame, buf);
                     else
