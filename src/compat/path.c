@@ -1,6 +1,6 @@
 #include "path.h"
-#include "mem.h"
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 
 #ifdef _WIN32

@@ -28,10 +28,10 @@ int FontManager_cleanup(FontManager *manager)
 
 char *FontManager_get_best_font(FontManager *manager, char **text, size_t nstr) {
     FcCharSet *cs = FcCharSetCreate();
-    if (!cs) goto cleanup;
     FcPattern *pat = NULL;
     FcFontSet *matches = NULL;
     char *result = NULL;
+    if (!cs) goto cleanup;
     for (size_t i = 0; i < nstr; i++) {
         size_t len = strlen(text[i]);
         for (size_t j = 0; j < len && text[i][j];) {
@@ -43,7 +43,7 @@ char *FontManager_get_best_font(FontManager *manager, char **text, size_t nstr) 
     }
     pat = FcPatternBuild(NULL, FC_CHARSET, FcTypeCharSet, cs, NULL);
     if (!pat) goto cleanup;
-    FcResult match_result = 0;
+    FcResult match_result;
     matches = FcFontSort(manager->fc_config, pat, FcTrue, &cs, &match_result);
     if (!matches) goto cleanup;
 

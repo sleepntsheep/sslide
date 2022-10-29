@@ -9,7 +9,6 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_render.h>
-#include <SDL2/SDL_rwops.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_video.h>
 #include <fontconfig/fontconfig.h>
@@ -30,7 +29,6 @@
 #include "xmalloc.h"
 #include "font.h"
 #include "compat/path.h"
-#include "compat/mem.h"
 
 #define VERSION "0.0.7"
 
@@ -82,12 +80,12 @@ static bool invert = false;
 
 Slide parse_slide_from_file(char *, bool);
 int getfontsize(Frame, int *, int *, char *);
-void init();
+void init(void);
 void drawframe(Frame);
 void drawpage(Page);
 void drawprogressbar(float);
-void run();
-void cleanup();
+void run(void);
+void cleanup(void);
 void frame_add_line(Frame *, char *);
 void frame_put_image(Frame *, char *, char *);
 
@@ -134,7 +132,7 @@ int getfontsize(Frame frame, int *width, int *height, char *path) {
         int m = bl + (br - bl) / 2;
         int longest_line_w = 0, line_h;
         TTF_Font *font = TTF_OpenFont(path, m);
-        for (long i = 0; i < dynarray_len(frame.lines); i++) {
+        for (size_t i = 0; i < dynarray_len(frame.lines); i++) {
             int line_w;
             TTF_SizeUTF8(font, frame.lines[i], &line_w, &line_h);
             if (line_w > longest_line_w)
@@ -168,14 +166,14 @@ void init() {
         panic("Failed initializing FontManager");
 }
 
-void cleanup() {
-    for (long i = 0; i < dynarray_len(slide); i++) {
-        for (long j = 0; j < dynarray_len(slide[i]); j++) {
+void cleanup(void) {
+    for (size_t i = 0; i < dynarray_len(slide); i++) {
+        for (size_t j = 0; j < dynarray_len(slide[i]); j++) {
             if (slide[i][j].type == FRAMEIMAGE) {
                 SDL_DestroyTexture(slide[i][j].image.texture);
             }
             else if (slide[i][j].type == FRAMETEXT) {
-                for (long k = 0; k < dynarray_len(slide[i][j].lines); k++) {
+                for (size_t k = 0; k < dynarray_len(slide[i][j].lines); k++) {
                     free(slide[i][j].lines[k]);
                 }
                 arrfree(slide[i][j].lines);
@@ -203,20 +201,21 @@ void drawframe(Frame frame) {
         int xoffset = (framew - total_width) / 2;
         int yoffset = (frameh - total_height) / 2;
 
-        for (long i = 0; i < dynarray_len(frame.lines); i++) {
+        for (size_t i = 0; i < dynarray_len(frame.lines); i++) {
             SDL_Surface *textsurface = TTF_RenderUTF8_Blended(
                 font, frame.lines[i], invert ? bg : fg);
             SDL_Texture *texttexture =
                 SDL_CreateTextureFromSurface(rend, textsurface);
             int linew, lineh;
             SDL_QueryTexture(texttexture, NULL, NULL, &linew, &lineh);
-            SDL_RenderCopy(rend, texttexture, NULL, &(SDL_Rect) {
+            SDL_Rect dest_rect = {
                 .x = frame.x * uw / 100 + xoffset + x_margin_px,
                 .y = frame.y * uh / 100 + (line_height + linespacing) * i + yoffset
                     + y_margin_px,
                 .w = linew,
                 .h = lineh,
-			});
+			};
+            SDL_RenderCopy(rend, texttexture, NULL, &dest_rect);
             SDL_FreeSurface(textsurface);
             SDL_DestroyTexture(texttexture);
         }
@@ -248,23 +247,24 @@ void drawpage(Page page) {
     SDL_Color realbg = invert ? fg : bg;
     SDL_SetRenderDrawColor(rend, realbg.r, realbg.g, realbg.b, realbg.a);
     SDL_RenderClear(rend);
-    for (long i = 0; i < dynarray_len(page); i++)
+    for (size_t i = 0; i < dynarray_len(page); i++)
         drawframe(page[i]);
 }
 
 void drawprogressbar(float progress /* value between 0 and 1 */) {
     SDL_Color realfg = invert ? bg : fg;
     SDL_SetRenderDrawColor(rend, realfg.r, realfg.g, realfg.b, realfg.a);
-    SDL_RenderFillRect(rend, &(SDL_Rect) {
+    SDL_Rect rect = {
         .x = 0,
         .y = h - PROGRESSBAR_HEIGHT,
         .w = progress * w,
         .h = PROGRESSBAR_HEIGHT,
-    });
+    };
+    SDL_RenderFillRect(rend, &rect);
 }
 
-void run() {
-    long pagei = 0;
+void run(void) {
+    size_t pagei = 0;
     SDL_Event event;
 
     while (true) {
