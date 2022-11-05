@@ -4,7 +4,7 @@ configurations { "Debug", "Release", "Mingw" }
 
 newaction {
     trigger     = "clean",
-    description = "clean the build directory",
+    description = "clean",
     execute     = function ()
         print("----\nCleaning")
         os.rmdir("./build")
@@ -22,6 +22,7 @@ project "sslide"
 kind "WindowedApp"
 language "C"
 targetdir "%{cfg.buildcfg}"
+cdialect "c99"
 
 files { "src/**.h", "src/**.c" }
 
@@ -34,8 +35,6 @@ links { "mingw32", "SDL2main", "comdlg32", "ole32", "shlwapi" }
 
 filter "configurations:Debug"
 defines { "DEBUG" }
---buildoptions { "-fno-omit-frame-pointer", "-fsanitize=undefined,address" }
---linkoptions { "-fsanitize=undefined,address" }
 symbols "On"
 
 filter "configurations:Release"
@@ -43,6 +42,6 @@ defines { "NDEBUG" }
 optimize "On"
 
 filter {}
-buildoptions { "-std=c99", "-Wall", "-Wall", "-Wextra", "-pedantic" }
+buildoptions { "-Wall", "-Wall", "-Wextra", "-pedantic" }
 links { "SDL2", "SDL2_ttf", "SDL2_image", "fontconfig" }
 

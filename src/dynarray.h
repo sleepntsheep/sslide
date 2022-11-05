@@ -6,6 +6,10 @@
  * dynarray.h is single-header library for
  * dynamic array in C, similar to std::vector in C++
  *
+ * Notes: These function require the pointer's type to be preserved!!
+ * Casting to and from void pointer is dangerous, you must cast back
+ * to original type before calling these functions
+ *
  * inspired by https://github.com/nothings/stb/blob/master/stb_ds.h
  *
  * Instruction & How to use
@@ -86,6 +90,7 @@ struct _dynarray_info {
 };
 
 #define DYNARRAY_MIN_CAPACITY 4
+#define dynarray(T) T*
 
 #ifndef SHEEP_DYNARRAY_NOSHORTHAND
 
