@@ -26,7 +26,8 @@ document and it will work. But this also work with normal sslide document!
 
 ### Non-Features
 
-- pdf exporting - you can set up a script press k and screenshot
+- pdf exporting: you can set up a script press k and screenshot
+- macros: use find-and-replace in your text editor!
 
 ### Building instructions
 
