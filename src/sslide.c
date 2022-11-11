@@ -14,23 +14,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <fontconfig/fontconfig.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
-#include <fontconfig/fontconfig.h>
-
+#include "attr.h"
 #include "config.h"
-#include "font.h"
-#include "path.h"
-#include "tinyfiledialogs.h"
 #define SHEEP_DYNARRAY_IMPLEMENTATION
 #include "dynarray.h"
 #define SHEEP_FMT_IMPLEMENTATION
-#include "attr.h"
 #include "fmt.h"
+#include "font.h"
+#include "path.h"
+#include "tinyfiledialogs.h"
 
-#define VERSION "0.0.7"
+#define VERSION "0.0.13"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -44,7 +43,7 @@ enum FrameType {
 typedef struct {
     SDL_Texture *texture;
     char path[PATH_MAX];
-    double ratio;
+    float ratio;
     bool valid;
 } Image;
 
@@ -70,7 +69,7 @@ static bool invert = false;
 
 int slide_from_file(Slide *, char *, bool);
 void init(const char *title);
-void drawprogressbar(double);
+void drawprogressbar(float);
 void run(void);
 void cleanup(void);
 
@@ -100,13 +99,13 @@ void image_load_texture(Image *image, SDL_Renderer *rend) {
     image->texture = IMG_LoadTexture(rend, image->path);
     int w = 0, h = 0;
     if (image->texture == NULL) {
-        ffmt(stderr, "Failed loading image {str}: {str}", image->path,
+        efmt("Failed loading image {str}: {str}", image->path,
              IMG_GetError());
         image->valid = false;
     } else {
         SDL_QueryTexture(image->texture, NULL, NULL, &w, &h);
     }
-    image->ratio = (double)w / h;
+    image->ratio = (float)w / h;
 }
 
 void image_cleanup(Image *image) {
@@ -172,7 +171,7 @@ int frame_find_font_size(const Frame *const frame, int *size, int *text_width,
         int longest_line_w = 0, line_h;
         TTF_Font *font = TTF_OpenFont(frame->font, m);
         if (!font) {
-            ffmt(stderr, "Failed to open font: {str}", TTF_GetError());
+            efmt("Failed to open font: {str}", TTF_GetError());
             return -1;
         }
         for (size_t i = 0; i < dynarray_len(frame->lines); i++) {
@@ -203,16 +202,16 @@ void init(const char *title) {
 #else
     if (IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) < 1)
 #endif
-        ffmt(stderr, "Img_INIT: {str}", IMG_GetError());
+        efmt("Img_INIT: {str}", IMG_GetError());
     win =
         SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                          width, height, SDL_WINDOW_RESIZABLE);
     if (!win)
-        ffmt(stderr, "Failed creating window: {str}", SDL_GetError());
+        efmt("Failed creating window: {str}", SDL_GetError());
     rend = SDL_CreateRenderer(win, -1, 0);
     if (!rend)
-        ffmt(stderr, "Failed creating renderer: {str}", SDL_GetError());
-    ffmt(stderr, "Initialized window\n");
+        efmt("Failed creating renderer: {str}", SDL_GetError());
+    efmt("Initialized window\n");
 }
 
 void cleanup(void) {
@@ -303,7 +302,7 @@ void page_draw(Page page, SDL_Renderer *rend) {
         frame_draw(page + i, rend);
 }
 
-void drawprogressbar(double progress /* value between 0 and 1 */) {
+void drawprogressbar(float progress /* value between 0 and 1 */) {
     SDL_Color realfg = invert ? bg : fg;
     SDL_SetRenderDrawColor(rend, realfg.r, realfg.g, realfg.b, realfg.a);
     SDL_RenderFillRect(rend, &(SDL_Rect){
@@ -407,7 +406,7 @@ void run(void) {
         if (redraw) {
             page_draw(slide[pagei], rend);
             if (progressbar)
-                drawprogressbar((double)(pagei + 1) / arrlen(slide));
+                drawprogressbar((float)(pagei + 1) / arrlen(slide));
             SDL_RenderPresent(rend);
         }
         SDL_Delay(15);
@@ -419,9 +418,8 @@ int slide_from_file(Slide *slide, char *path, bool simple) {
     int line = 0;
 
     if (strcmp(path, "-") != 0) {
-        in = fopen(path, "r");
-        if (!in) {
-            ffmt(stderr, "Failed opening file {str}: {str}", path,
+        if (!(in = fopen(path, "r"))) {
+            efmt("Failed opening file {str}: {str}", path,
                  strerror(errno));
             return -1;
         }
@@ -481,7 +479,7 @@ int slide_from_file(Slide *slide, char *path, bool simple) {
                 if (simple) {
                     arrpush(lines, strdup(buf));
                 } else {
-                    ffmt(stderr, "Wrong geo format line: {int} ({str})\n", line,
+                    efmt("Wrong geo format line: {int} ({str})\n", line,
                          buf);
                     valid = false;
                 }
@@ -516,16 +514,17 @@ int slide_from_file(Slide *slide, char *path, bool simple) {
 
             Frame nf = {0};
             if (type == FrameText) {
-                if (lines == NULL)
+                if (lines == NULL) {
                     nf.valid = false;
-                else
+				} else {
                     frametext_init(&nf, lines, x, y, w, h);
+				}
             } else {
                 frameimage_init(&nf, image, x, y, w, h);
             }
+
             if (nf.valid)
                 arrpush(page, nf);
-
             if (simple)
                 goto next_page;
         }
@@ -550,7 +549,7 @@ int main(int argc, char **argv) {
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-v")) {
-            ffmt(stderr, "{str} Version: {str}\n", argv[0], VERSION);
+            efmt("{str} Version: {str}\n", argv[0], VERSION);
             exit(0);
         } else if (!strcmp(argv[i], "-s")) {
             simple = true;
@@ -567,11 +566,11 @@ int main(int argc, char **argv) {
         srcfile = (char *)tinyfd_openFileDialog("Open slide", dir, 0, NULL,
                                                 NULL, false);
         if (!srcfile) {
-            ffmt(stderr, "Usage: {str} [OPTIONS] <FILE>\n", argv[0]);
+            efmt("Usage: {str} [OPTIONS] <FILE>\n", argv[0]);
             return 0;
         }
     } else if (!strcmp(srcfile, "-")) {
-        ffmt(stderr, "Reading from stdin\n");
+        efmt("Reading from stdin\n");
     }
 
     if (slide_from_file(&slide, srcfile, simple) != 0)
@@ -581,3 +580,4 @@ int main(int argc, char **argv) {
     cleanup();
     return 0;
 }
+

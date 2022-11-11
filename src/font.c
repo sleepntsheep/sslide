@@ -16,7 +16,7 @@ int get_best_ttf(char *text, char *out, size_t outsize) {
         FcChar32 cs4;
         int utf8len = FcUtf8ToUcs4((const FcChar8*)text + i, &cs4, textlen - i);
         if (cs4 == 0 || utf8len < 0) {
-            ffmt(stderr, "Invalid input, is it UTF-8?");
+            ffmt(stderr, "Invalid input, is it UTF-8?\n");
             return -1;
         }
         i += utf8len;

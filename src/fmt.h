@@ -11,9 +11,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#ifndef ffmt
 #define fmt(...) ffmt(stdout, __VA_ARGS__)
-#endif
+#define efmt(...) ffmt(stderr, __VA_ARGS__)
 
 typedef void (*fmt_callback)(FILE *, const void *const arg);
 
@@ -126,5 +125,6 @@ void ffmt(FILE *out, const char *fstr, ...) {
     if (fmt_flush) fflush(out);
 }
 
+#undef SHEEP_FMT_IMPLEMENTATION
 #endif /* SHEEP_FMT_IMPLEMENTATION */
 
