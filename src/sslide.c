@@ -29,10 +29,13 @@
 #include "path.h"
 #include "tinyfiledialogs.h"
 
-#define VERSION "0.0.13"
+#define VERSION "0.0.14"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+#define SSLIDE_BUFSIZE 8192 /* max line length */
+static const int PROGRESSBAR_HEIGHT = 8;
 
 enum FrameType {
     FrameNone,
@@ -62,12 +65,11 @@ typedef Page *Slide;
 static SDL_Window *win = NULL;
 static SDL_Renderer *rend = NULL;
 static Slide slide = dynarray_new;
-static int linespacing = 3;
+static Config config = default_config;
 static int width = 800, height = 600;
 static bool progressbar = true;
-static bool invert = false;
 
-int slide_from_file(Slide *, char *, bool);
+void slide_from_file(char *, bool);
 void init(const char *title);
 void drawprogressbar(float);
 void run(void);
@@ -122,20 +124,23 @@ void frametext_init(Frame *frame, dynarray(char *) lines, int x, int y, int w,
     frame->h = h;
     frame->lines = lines;
     frame->valid = true;
-    size_t lines_len = 0;
-    for (size_t i = 0; i < arrlen(lines); i++)
-        lines_len += strlen(lines[i]);
-    char *joined = calloc(lines_len + 1, 1);
-    size_t offset = 0;
-    for (size_t i = 0; i < arrlen(lines); i++) {
-        size_t line_len = strlen(lines[i]);
-        memcpy(joined + offset, lines[i], line_len);
-        offset += line_len;
+        if (lines) {
+        size_t lines_len = 0;
+        for (size_t i = 0; i < arrlen(lines); i++)
+            lines_len += strlen(lines[i]);
+        char *joined = calloc(lines_len + 1, 1);
+        size_t offset = 0;
+        for (size_t i = 0; i < arrlen(lines); i++) {
+            size_t line_len = strlen(lines[i]);
+            memcpy(joined + offset, lines[i], line_len);
+            offset += line_len;
+        }
+        if (config.font) {
+        } else if (get_best_ttf(joined, frame->font, sizeof frame->font) != 0) {
+                frame->valid = false;
+        }
+        free(joined);
     }
-    int res = get_best_ttf(joined, frame->font, sizeof frame->font);
-    if (res != 0 || !frame->font[0])
-        frame->valid = false;
-    free(joined);
 }
 
 void frameimage_init(Frame *frame, Image image, int x, int y, int w, int h) {
@@ -165,13 +170,13 @@ int frame_find_font_size(const Frame *const frame, int *size, int *text_width,
     /* binary search to find largest font size that fit in frame */
     int bl = 0, br = 256;
     int linecount = dynarray_len(frame->lines);
-    int lfac = linespacing * (linecount - 1);
+    int lfac = config.linespacing * (linecount - 1);
     while (bl <= br) {
         int m = bl + (br - bl) / 2;
         int longest_line_w = 0, line_h;
-        TTF_Font *font = TTF_OpenFont(frame->font, m);
+        TTF_Font *font = TTF_OpenFont(config.font ? config.font : frame->font, m);
         if (!font) {
-            efmt("Failed to open font: {str}", TTF_GetError());
+            efmt("Failed to open font: {str}\n", TTF_GetError());
             return -1;
         }
         for (size_t i = 0; i < dynarray_len(frame->lines); i++) {
@@ -196,21 +201,18 @@ int frame_find_font_size(const Frame *const frame, int *size, int *text_width,
 void init(const char *title) {
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
-#ifdef IMG_INIT_AVIF
-    if (IMG_Init(IMG_INIT_AVIF | IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) <
-        1)
-#else
-    if (IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) < 1)
-#endif
+    if (IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP) < 1) {
         efmt("Img_INIT: {str}", IMG_GetError());
-    win =
-        SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                         width, height, SDL_WINDOW_RESIZABLE);
-    if (!win)
+    }
+    win = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE);
+    if (!win) {
         efmt("Failed creating window: {str}", SDL_GetError());
+    }
     rend = SDL_CreateRenderer(win, -1, 0);
-    if (!rend)
+    if (!rend) {
         efmt("Failed creating renderer: {str}", SDL_GetError());
+    }
     efmt("Initialized window\n");
 }
 
@@ -260,31 +262,30 @@ void frame_draw(Frame *frame, SDL_Renderer *rend) {
     int framew = frame->w * width / 100;
     int frameh = frame->h * height / 100;
     if (frame->type == FrameText) {
-        int total_width, total_height, fontsize;
+        int total_width = 0, total_height = 0, fontsize = 0;
         if (frame_find_font_size(frame, &fontsize, &total_width,
                                  &total_height) != 0) {
             return;
         }
-        TTF_Font *font = TTF_OpenFont(frame->font, fontsize);
+        TTF_Font *font = TTF_OpenFont(config.font ? config.font : frame->font, fontsize);
         int line_height = TTF_FontHeight(font);
         int xoffset = (framew - total_width) / 2;
         int yoffset = (frameh - total_height) / 2;
 
         for (size_t i = 0; i < arrlen(frame->lines); i++) {
             SDL_Surface *textsurface =
-                TTF_RenderUTF8_Blended(font, frame->lines[i], invert ? bg : fg);
+                TTF_RenderUTF8_Blended(font, frame->lines[i], config.fg);
             SDL_Texture *texttexture =
                 SDL_CreateTextureFromSurface(rend, textsurface);
             int linew, lineh;
             SDL_QueryTexture(texttexture, NULL, NULL, &linew, &lineh);
-            SDL_Rect dest_rect = {
+            SDL_RenderCopy(rend, texttexture, NULL, &(SDL_Rect) {
                 .x = frame->x * width / 100 + xoffset,
-                .y = frame->y * height / 100 + (line_height + linespacing) * i +
+                .y = frame->y * height / 100 + (line_height + config.linespacing) * i +
                      yoffset,
                 .w = linew,
                 .h = lineh,
-            };
-            SDL_RenderCopy(rend, texttexture, NULL, &dest_rect);
+            });
             SDL_FreeSurface(textsurface);
             SDL_DestroyTexture(texttexture);
         }
@@ -295,16 +296,14 @@ void frame_draw(Frame *frame, SDL_Renderer *rend) {
 }
 
 void page_draw(Page page, SDL_Renderer *rend) {
-    SDL_Color realbg = invert ? fg : bg;
-    SDL_SetRenderDrawColor(rend, realbg.r, realbg.g, realbg.b, realbg.a);
+    SDL_SetRenderDrawColor(rend, config.bg.r, config.bg.g, config.bg.b, config.bg.a);
     SDL_RenderClear(rend);
     for (size_t i = 0; i < arrlen(page); i++)
         frame_draw(page + i, rend);
 }
 
 void drawprogressbar(float progress /* value between 0 and 1 */) {
-    SDL_Color realfg = invert ? bg : fg;
-    SDL_SetRenderDrawColor(rend, realfg.r, realfg.g, realfg.b, realfg.a);
+    SDL_SetRenderDrawColor(rend, config.fg.r, config.fg.g, config.fg.b, config.fg.a);
     SDL_RenderFillRect(rend, &(SDL_Rect){
                                  .x = 0,
                                  .y = height - PROGRESSBAR_HEIGHT,
@@ -319,8 +318,8 @@ void run(void) {
     size_t pagei = 0;
     SDL_Event event;
 
+    bool redraw = true;
     while (true) {
-        bool redraw = false;
         /* event loop */
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -329,7 +328,6 @@ void run(void) {
             case SDL_KEYDOWN:
                 switch (event.key.keysym.sym) {
                 case SDLK_0:
-                    FALLTHROUGH;
                 case SDLK_1:
                 case SDLK_2:
                 case SDLK_3:
@@ -344,7 +342,6 @@ void run(void) {
                     redraw = true;
                     break;
                 case SDLK_UP:
-                    FALLTHROUGH;
                 case SDLK_LEFT:
                 case SDLK_k:
                     if (pagei > 0) {
@@ -353,7 +350,6 @@ void run(void) {
                     }
                     break;
                 case SDLK_DOWN:
-                    FALLTHROUGH;
                 case SDLK_RIGHT:
                 case SDLK_j:
                     if (pagei < arrlen(slide) - 1) {
@@ -369,10 +365,13 @@ void run(void) {
                     pagei = arrlen(slide) - 1;
                     redraw = true;
                     break;
-                case SDLK_i:
-                    invert = !invert;
+                case SDLK_i: {
+                    SDL_Color tmp = config.bg;
+                    config.bg = config.fg;
+                    config.fg = tmp;
                     redraw = true;
                     break;
+                             }
                 case SDLK_p:
                     progressbar = !progressbar;
                     redraw = true;
@@ -408,12 +407,13 @@ void run(void) {
             if (progressbar)
                 drawprogressbar((float)(pagei + 1) / arrlen(slide));
             SDL_RenderPresent(rend);
+            redraw = false;
         }
         SDL_Delay(15);
     }
 }
 
-int slide_from_file(Slide *slide, char *path, bool simple) {
+void slide_from_file(char *path, bool simple) {
     FILE *in = NULL;
     int line = 0;
 
@@ -421,130 +421,167 @@ int slide_from_file(Slide *slide, char *path, bool simple) {
         if (!(in = fopen(path, "r"))) {
             efmt("Failed opening file {str}: {str}", path,
                  strerror(errno));
-            return -1;
+            return;
         }
     } else {
         in = stdin;
     }
 
-    char *path_dup = strdup(path);
-    char *path_dir = dirname(path_dup);
+    char *text = NULL;
+    size_t fsize = 0;
+    if (in != stdin) {
+        fseek(in, 0L, SEEK_END);
+        fsize = ftell(in);
+        fseek(in, 0L, SEEK_SET);
+        text = malloc(fsize + 1);
+        if (fread(text, fsize, 1, in) != 1) {
+            efmt("Failed reading file data\n");
+        }
+    } else {
+        char buf[SSLIDE_BUFSIZE];
+        size_t cap = SSLIDE_BUFSIZE;
+        fsize = 0;
+        text = malloc(cap);
+        while (fgets(buf, sizeof buf, in)) {
+            size_t len = strlen(buf);
+            if (fsize + len + 1 >= cap) {
+                cap *= 2;
+                text = realloc(text, cap);
+            }
+            memcpy(text + fsize, buf, len);
+            fsize += len;
+            text[fsize] = 0;
+        }
+        fsize++;
+    }
+
+    size_t flinecount = 1;
+    for (size_t i = 0; i <= fsize; i++) {
+        if (text[i] == '\n') {
+            text[i] = 0;
+            flinecount++;
+        }
+    }
+
+    efmt("Read input file with {int} lines\n", flinecount + 1);
+    char **flines = malloc(sizeof (char*) * (flinecount + 1));
+    flines[0] = text;
+    for (size_t i = 0, sp = 1; i <= fsize; i++) {
+        if (text[i] == 0) {
+            flines[sp++] = text + i + 1;
+        }
+    }
+
     bool valid = true;
+    slide = dynarray_new;
+    Page page = dynarray_new;
+    Image image = {0};
+    int x, y, w, h;
+    int type = FrameNone;
+    char **lines = dynarray_new;
+    char *path_dir = dirname(strdup(path));
+    int in_config = 0;
 
-    *slide = dynarray_new;
-    char buf[SSLIDE_BUFSIZE] = {0};
-
-    for (;;) {
-        Page page = dynarray_new;
-        for (;;) {
-            Image image = {0};
-            char *ret = NULL;
-            dynarray(char *) lines = dynarray_new;
-            int type = FrameNone;
-
-            /* clear empty lines */
-            for (; (ret = fgets(buf, sizeof buf, in)); line++)
-                if (buf[0] != '\n' && buf[0] != '#')
-                    break;
-            char *nl = strchr(buf, '\n');
-            if (nl)
-                *nl = 0;
-
-            if (ret == NULL /* EOF */) {
-                if (arrlen(*slide) == 0) {
-                    if (simple) {
-                        arrpush(*slide, page);
-                    } else {
-                        ffmt(stderr,
-                             "Slide has no page, make sure every page is "
-                             "terminated with a @\n");
-                        arrfree(page);
-                        valid = false;
-                        goto end_slide;
-                    }
-                }
-                goto end_slide;
-            }
-
-            if (!strcmp(buf, "@")) {
-                if (simple)
-                    goto next_page_skip_current;
-                else
-                    goto next_page;
-            }
-
-            int x = 0, y = 0, w = 100, h = 100;
-            if (sscanf(buf, ";%d;%d;%d;%d", &x, &y, &w, &h) != 4 &&
-                strcmp(buf, ";f") != 0) {
-                if (simple) {
-                    arrpush(lines, strdup(buf));
+    for (size_t li = 0; li < flinecount; li++) {
+        char *cline = flines[li];
+        if (cline[0] == '#') {
+            continue;
+        }
+        else if (strcmp(cline, "---") == 0) {
+            in_config++;
+        }
+        else if (in_config == 1) {
+            config_parse_line(&config, cline);
+        }
+        if (cline[0] == '\x0' || (!strcmp(cline, "@") && type != FrameNone)) {
+            if (type == FrameNone) {
+                continue;
+            } else {
+                Frame nf = {0};
+                if (type == FrameText) {
+                    frametext_init(&nf, lines, x, y, w, h);
+                    lines = dynarray_new;
                 } else {
-                    efmt("Wrong geo format line: {int} ({str})\n", line,
-                         buf);
+                    frameimage_init(&nf, image, x, y, w, h);
+                    image = (Image){0};
+                }
+
+                if (nf.valid)
+                    arrpush(page, nf);
+                type = FrameNone;
+                if (simple) {
+                    arrpush(slide, page);
+                    page = dynarray_new;
+                }
+            }
+            if (strcmp(cline, "@") == 0) {
+                if (!simple) {
+                    arrpush(slide, page);
+                }
+                page = dynarray_new;
+            }
+            continue;
+        }
+        if (strcmp(cline, "@") == 0) {
+            if (!simple) {
+                arrpush(slide, page);
+            }
+            page = dynarray_new;
+        }
+        else if (cline[0] == ';' && type == FrameNone) {
+            x = 0, y = 0, w = 100, h = 100;
+            if (sscanf(cline, ";%d;%d;%d;%d", &x, &y, &w, &h) != 4 &&
+                    strcmp(cline, ";f") != 0) {
+                if (simple) {
+                    arrpush(lines, strdup(cline));
+                } else {
+                    efmt("Wrong geo format line: {int} ({str})\n", line, cline);
                     valid = false;
                 }
             }
-
-            for (; fgets(buf, sizeof buf, in) != NULL; line++) {
-                char *nl = strchr(buf, '\n');
-                if (nl)
-                    *nl = 0;
-
-                if (buf[0] == '#')
-                    continue;
-                if (buf[0] == '%') {
-                    if (type == FrameImage)
-                        ffmt(stderr,
-                             "Only one image per frame is allowed (line {int})",
-                             line);
-                    type = FrameImage;
-                    char path[PATH_MAX * 2 + 1];
-                    if (!strcmp(path_dir, ".") || !path_is_relative(buf + 1))
-                        strcpy(path, buf + 1);
-                    else
-                        snprintf(path, sizeof path, "%s/%s", path_dir, buf + 1);
-                    image_init(&image, path);
-                } else if (buf[0]) {
-                    type = FrameText;
-                    arrpush(lines, strdup(buf));
-                } else {
-                    break;
-                }
-            }
-
-            Frame nf = {0};
-            if (type == FrameText) {
-                if (lines == NULL) {
-                    nf.valid = false;
-				} else {
-                    frametext_init(&nf, lines, x, y, w, h);
-				}
-            } else {
-                frameimage_init(&nf, image, x, y, w, h);
-            }
-
-            if (nf.valid)
-                arrpush(page, nf);
-            if (simple)
-                goto next_page;
+            type = FrameText;
         }
-    next_page:
-        arrpush(*slide, page);
-    next_page_skip_current:;
+        else if (cline[0] == '%') {
+            if (type == FrameImage) {
+                efmt("Only one image per frame is allowed (line {int})", line);
+                continue;
+            }
+            type = FrameImage;
+            char path[PATH_MAX * 2 + 1];
+            if (!strcmp(path_dir, ".") || !path_is_relative(cline + 1))
+                strcpy(path, cline + 1);
+            else
+                snprintf(path, sizeof path, "%s/%s", path_dir, cline + 1);
+            image_init(&image, path);
+        } else {
+            type = FrameText;
+            arrpush(lines, strdup(cline));
+        }
     }
-end_slide:
-    free(path_dup);
+
+    if (arrlen(slide) == 0) {
+        if (simple) {
+            arrpush(slide, page);
+        } else {
+            efmt("Slide has no page, make sure every page is"
+                    " terminated with a @\n");
+            arrfree(page);
+            valid = false;
+        }
+    }
+
+    free(flines);
+    free(text);
     if (in != stdin)
         fclose(in);
     if (!valid)
-        *slide = NULL;
-    return valid ? 0 : 1;
+        slide = NULL;
 }
 
 int main(int argc, char **argv) {
-    fmt_set_flush(true);
+    fmt_set_flush(false);
 
-    char *srcfile = NULL;
+    char *src = NULL;
     bool simple = false;
 
     for (int i = 1; i < argc; i++) {
@@ -554,28 +591,29 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[i], "-s")) {
             simple = true;
         } else {
-            srcfile = argv[i];
+            src = argv[i];
         }
     }
 
-    if (!srcfile) {
+    if (!src) {
         char dir[PATH_MAX] = {0};
         if (path_home_dir(dir, sizeof dir) != 0) {
             strcpy(dir, ".");
         }
-        srcfile = (char *)tinyfd_openFileDialog("Open slide", dir, 0, NULL,
+        src = (char *)tinyfd_openFileDialog("Open slide", dir, 0, NULL,
                                                 NULL, false);
-        if (!srcfile) {
+        if (!src) {
             efmt("Usage: {str} [OPTIONS] <FILE>\n", argv[0]);
             return 0;
         }
-    } else if (!strcmp(srcfile, "-")) {
+    } else if (!strcmp(src, "-")) {
         efmt("Reading from stdin\n");
     }
 
-    if (slide_from_file(&slide, srcfile, simple) != 0)
+    slide_from_file(src, simple);
+    if (slide == NULL)
         return 1;
-    init(srcfile);
+    init(src);
     run();
     cleanup();
     return 0;

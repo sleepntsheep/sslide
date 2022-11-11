@@ -1,12 +1,28 @@
 #pragma once
 #ifndef SSLIDE_CONFIG_H
 #define SSLIDE_CONFIG_H
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <SDL2/SDL.h>
 
-static const SDL_Color bg = { 255, 255, 255, 255 };
-static const SDL_Color fg = { 0,   0,   0,   255 };
-static const int PROGRESSBAR_HEIGHT = 8;
+typedef struct {
+    char *font;
+    SDL_Color bg;
+    SDL_Color fg;
+    bool simple;
+    int linespacing;
+} Config;
 
-#define SSLIDE_BUFSIZE 8192 /* max line size */
+static const Config default_config = {
+    .font = NULL,
+    .bg = {0xFF, 0xFF, 0xFF, 0xFF},
+    .fg = {0, 0, 0, 0xFF},
+    .simple = false,
+    .linespacing = 3,
+};
+
+void config_parse_line(Config *conf, char *line);
 
 #endif /* SSLIDE_CONFIG_H */
 

@@ -20,7 +20,6 @@ void fmt_register(const char *, fmt_callback);
 void ffmt(FILE *out, const char *, ...);
 void fmt_set_flush(bool set);
 
-
 #endif /* SHEEP_FMT_H */
 
 #ifdef SHEEP_FMT_IMPLEMENTATION
