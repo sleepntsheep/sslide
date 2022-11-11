@@ -29,14 +29,14 @@
 #include "path.h"
 #include "tinyfiledialogs.h"
 
-#define VERSION "0.0.14"
+#define VERSION "0.0.15"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #define SSLIDE_BUFSIZE 8192 /* max line length */
-static const int PROGRESSBAR_HEIGHT = 8;
 
+/* types */
 enum FrameType {
     FrameNone,
     FrameText,
@@ -62,30 +62,32 @@ typedef struct {
 typedef Frame *Page;
 typedef Page *Slide;
 
+/* varibles */
 static SDL_Window *win = NULL;
 static SDL_Renderer *rend = NULL;
 static Slide slide = dynarray_new;
-static Config config = default_config;
+static Config config = config_default;
 static int width = 800, height = 600;
 static bool progressbar = true;
+static const int PROGRESSBAR_HEIGHT = 8;
 
+/* functions */
 void slide_from_file(char *, bool);
 void init(const char *title);
 void drawprogressbar(float);
 void run(void);
 void cleanup(void);
-
 void image_init(Image *, char *);
 void image_load_texture(Image *, SDL_Renderer *);
 void image_draw(Image *, SDL_Renderer *, Frame *);
 void image_cleanup(Image *);
 void frame_cleanup(Frame *);
-
-void frametext_init(Frame *, dynarray(char *), int, int, int, int);
-void frameimage_init(Frame *, Image, int, int, int, int);
+void frame_text_init(Frame *, dynarray(char *), int, int, int, int);
+void frame_image_init(Frame *, Image, int, int, int, int);
 void frame_draw(Frame *, SDL_Renderer *);
 int frame_find_font_size(const Frame *const, int *, int *, int *);
 
+/* impl */
 void image_init(Image *image, char *path) {
     image->valid = true;
     image->texture = NULL;
@@ -115,7 +117,7 @@ void image_cleanup(Image *image) {
         SDL_DestroyTexture(image->texture);
 }
 
-void frametext_init(Frame *frame, dynarray(char *) lines, int x, int y, int w,
+void frame_text_init(Frame *frame, dynarray(char *) lines, int x, int y, int w,
                     int h) {
     frame->type = FrameText;
     frame->x = x;
@@ -143,7 +145,7 @@ void frametext_init(Frame *frame, dynarray(char *) lines, int x, int y, int w,
     }
 }
 
-void frameimage_init(Frame *frame, Image image, int x, int y, int w, int h) {
+void frame_image_init(Frame *frame, Image image, int x, int y, int w, int h) {
     frame->type = FrameImage;
     frame->image = image;
     frame->x = x;
@@ -444,7 +446,7 @@ void slide_from_file(char *path, bool simple) {
         text = malloc(cap);
         while (fgets(buf, sizeof buf, in)) {
             size_t len = strlen(buf);
-            if (fsize + len + 1 >= cap) {
+            while (fsize + len + 1 >= cap) {
                 cap *= 2;
                 text = realloc(text, cap);
             }
@@ -452,7 +454,6 @@ void slide_from_file(char *path, bool simple) {
             fsize += len;
             text[fsize] = 0;
         }
-        fsize++;
     }
 
     size_t flinecount = 1;
@@ -499,10 +500,10 @@ void slide_from_file(char *path, bool simple) {
             } else {
                 Frame nf = {0};
                 if (type == FrameText) {
-                    frametext_init(&nf, lines, x, y, w, h);
+                    frame_text_init(&nf, lines, x, y, w, h);
                     lines = dynarray_new;
                 } else {
-                    frameimage_init(&nf, image, x, y, w, h);
+                    frame_image_init(&nf, image, x, y, w, h);
                     image = (Image){0};
                 }
 

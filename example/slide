@@ -1,8 +1,8 @@
 ---
 bg=FFFFFF
 fg=FF0000
-font=Sarabun.ttf
-linespacing=10
+#font=Sarabun.ttf
+linespacing=3
 ---
  
 ;f

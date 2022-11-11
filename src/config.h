@@ -14,7 +14,7 @@ typedef struct {
     int linespacing;
 } Config;
 
-static const Config default_config = {
+static const Config config_default = {
     .font = NULL,
     .bg = {0xFF, 0xFF, 0xFF, 0xFF},
     .fg = {0, 0, 0, 0xFF},
