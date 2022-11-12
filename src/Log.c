@@ -11,22 +11,31 @@
     X(LOG_PANIC), \
     X(LOG_LEVEL_COUNT),
 
-#define X(a) a
-enum LogLevel { LOG_LEVEL_LIST };
-#undef X
-#define X(a) #a
-const char *LogLevel_str[] = { LOG_LEVEL_LIST };
-#undef X
+enum LogLevel { 
+    LOG_DEBUG,
+    LOG_INFO,
+    LOG_WARN,
+    LOG_PANIC,
+    LOG_LEVEL_COUNT,
+};
+
+const char *LogLevel_str[] = {
+    "DEBUG",
+    "INFO",
+    "WARN",
+    "PANIC",
+    NULL,
+};
 
 static enum LogLevel level = LOG_INFO;
 
 void Log_global_init(void) {
     /* 
      * set environment SSLIDE_TRACE to one of 
-     * LOG_DEBUG
-     * LOG_INFO
-     * LOG_WARN
-     * LOG_PANIC
+     * DEBUG
+     * INFO
+     * WARN
+     * PANIC
      */
     level = LOG_INFO;
     char *s = getenv("SSLIDE_TRACE");

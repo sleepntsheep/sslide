@@ -4,6 +4,7 @@
 #include "Log.h"
 #include "Rect.h"
 #include "String.h"
+#include "Math.h"
 #include <SDL2/SDL_ttf.h>
 
 void Frame_text_init(struct Frame *frame, StringArray lines, int x, int y, int w,
@@ -16,7 +17,7 @@ void Frame_text_init(struct Frame *frame, StringArray lines, int x, int y, int w
     frame->lines = lines;
     frame->valid = true;
     if (lines) {
-        String joined = StringArray_join(lines, "");
+        String joined = StringArray_join(lines, "\n");
         if (!config.font) {
             frame->font = Font_covering_ttf(joined);
             if (frame->font == NULL)
@@ -64,8 +65,7 @@ int Frame_find_font_size(struct Frame *frame, struct Renderer *r, int *size, int
         for (int i = 0; i < linecount; i++) {
             int line_w;
             TTF_SizeUTF8(font, frame->lines[i], &line_w, &line_h);
-            if (line_w > longest_line_w)
-                longest_line_w = line_w;
+            longest_line_w = maxi(longest_line_w, line_w);
         }
         if (line_h * linecount + lfac < frame->h * r->height / 100 &&
             longest_line_w < frame->w * r->width / 100) {
