@@ -22,11 +22,7 @@ void config_parse_line(struct Config *conf, char *line)
     } else if (!strcmp(key, "font")) {
         conf->font = String_make(value);
     } else if (!strcmp(key, "simple")) {
-        if (!strcmp(value, "true")) {
-            conf->simple = true;
-        } else {
-            conf->simple = false;
-        }
+        conf->simple = !strcmp(value, "true");
     } else if (!strcmp(key, "linespacing")) {
         conf->linespacing = strtol(value, NULL, 10);
     } else if (!strcmp(key, "progressbarheight")) {

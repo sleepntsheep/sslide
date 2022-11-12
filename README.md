@@ -47,6 +47,8 @@ Install libsdl2, premake from your distro's repository
 ```
 premake5 gmake2
 make config=release
+sudo install -Dm755 Release/sslide /usr/local/bin
+sudo desktop-file-install sslide.desktop
 ```
 
 #### Visual Studio
