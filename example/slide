@@ -1,8 +1,8 @@
 ---
 bg=FFFFFF
 fg=000000
-font=/home/sheep/.fonts/Monocraft.otf
-linespacing=3
+#font=/home/sheep/.fonts/Monocraft.otf
+linespacing=10
 progressbarheight=4
 simple=false
 ---

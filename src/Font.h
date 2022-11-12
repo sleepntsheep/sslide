@@ -1,4 +1,5 @@
 #pragma once
+#include "String.h"
 
-char *Font_covering_ttf(const char *text);
+String Font_covering_ttf(const char *text);
 

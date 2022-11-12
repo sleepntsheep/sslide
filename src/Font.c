@@ -3,9 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Font.h"
+#include "String.h"
 #include "Log.h"
 
-char *Font_covering_ttf(const char *text) {
+String Font_covering_ttf(const char *text) {
     FcCharSet *cs = FcCharSetCreate();
     FcPattern *pat = NULL;
     FcFontSet *matches = NULL;
@@ -13,7 +14,7 @@ char *Font_covering_ttf(const char *text) {
     if (!cs) goto cleanup;
     size_t textlen = strlen(text);
     for (size_t i = 0; i < textlen; ) {
-        FcChar32 cs4;
+        FcChar32 cs4 = 0;
         int utf8len = FcUtf8ToUcs4((const FcChar8*)text + i, &cs4, textlen - i);
         if (cs4 == 0 || utf8len < 0) {
             Warn("Invalid input, make sure it is UTF-8");
@@ -43,7 +44,7 @@ cleanup:
     if (cs) FcCharSetDestroy(cs);
     if (pat) FcPatternDestroy(pat);
     if (matches) FcFontSetDestroy(matches);
-    return result;
+    return String_make(result);
 }
 
 

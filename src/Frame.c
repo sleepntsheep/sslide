@@ -17,7 +17,11 @@ void Frame_text_init(struct Frame *frame, StringArray lines, int x, int y, int w
     frame->lines = lines;
     frame->valid = true;
     if (lines) {
-        String joined = StringArray_join(lines, "\n");
+        for (size_t i = 0; i < StringArray_length(lines); i++) {
+            printf("%d : %s\n", i, lines[i]);
+        }
+        String joined = StringArray_join(lines, "");
+        puts(joined);
         if (!config.font) {
             frame->font = Font_covering_ttf(joined);
             if (frame->font == NULL)

@@ -68,9 +68,10 @@ String String_cat(String string, const char *cstr) {
 
 String String_catlen(String string, const char *cstr, size_t len) {
     if (string == NULL) return NULL;
+    //if (len == 0) return string;
     string = String_ensure_alloc(string, len + 1);
     memcpy(string + String_length(string), cstr, len);
-    string[len] = 0;
+    string[String_length(string) + len] = 0;
     String_getinfo(string)->len += len;
     return string;
 }
@@ -150,11 +151,12 @@ void StringArray_free(StringArray sa) {
 
 String StringArray_join(StringArray sa, const char *delim) {
     if (StringArray_length(sa) > 0) {
-        String s = String_make(sa[0]);
+        String s = String_make("");
         size_t delimlen = strlen(delim);
-        for (size_t i = 1; i < StringArray_length(sa); i++) {
-            s = String_catlen(s, delim, delimlen);
+        for (size_t i = 0; i < StringArray_length(sa); i++) {
             s = String_catlen(s, sa[i], String_length(sa[i]));
+            if (i < StringArray_length(sa) - 1)
+                s = String_catlen(s, delim, delimlen);
         }
         return s;
     }
