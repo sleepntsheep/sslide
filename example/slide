@@ -3,10 +3,9 @@ bg=FFFFFF
 fg=FF0000
 #font=Sarabun.ttf
 linespacing=3
+progressbarheight=4
 ---
- 
-;f
-@
+
 ;f
 sslide
 @
@@ -17,25 +16,21 @@ More simple, More powerful
 
 ;f
 Each page of slide contain arbitary number of frames
-
 @
 
 ;f
 A frame might be "Image frame" or "Text Frame"
-
 @
 
 ;f
 An Image frame can contain one image
 A text frame can contain one paragraph of text
-
 @
 
 ;f
 Each frame must be given a "geometry"
 in format ;x;y;w;h 
 Every value is calculated in proportion to window size.
-
 @
 
 ;f
@@ -45,7 +40,6 @@ Mean "make a frame at 10% from the left
 20% from the top, 
 width and height = 30%"
 Or use ;f as shorthand for ;0;0;100;100
-
 @
 
 ;0;10;100;30

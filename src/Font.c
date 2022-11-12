@@ -2,10 +2,10 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#include "font.h"
-#include "fmt.h"
+#include "Font.h"
+#include "Log.h"
 
-int get_best_ttf(char *text, char *out, size_t outsize) {
+char *Font_covering_ttf(char *text) {
     FcCharSet *cs = FcCharSetCreate();
     FcPattern *pat = NULL;
     FcFontSet *matches = NULL;
@@ -16,8 +16,8 @@ int get_best_ttf(char *text, char *out, size_t outsize) {
         FcChar32 cs4;
         int utf8len = FcUtf8ToUcs4((const FcChar8*)text + i, &cs4, textlen - i);
         if (cs4 == 0 || utf8len < 0) {
-            ffmt(stderr, "Invalid input, is it UTF-8?\n");
-            return -1;
+            Warn("Invalid input, make sure it is UTF-8");
+            return NULL;
         }
         i += utf8len;
         FcCharSetAddChar(cs, cs4);
@@ -40,17 +40,10 @@ int get_best_ttf(char *text, char *out, size_t outsize) {
     }
 
 cleanup:
-    if (result) {
-        size_t result_len = 0;
-        if (result_len + 1 > outsize) {
-            return 1;
-        }
-        strcpy(out, result);
-    }
     if (cs) FcCharSetDestroy(cs);
     if (pat) FcPatternDestroy(pat);
     if (matches) FcFontSetDestroy(matches);
-    return 0;
+    return result;
 }
 
 

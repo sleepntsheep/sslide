@@ -108,8 +108,8 @@ struct _dynarray_info {
 
 #endif /* SHEEP_DYNARRAY_NOSHORTHAND */
 
-static void *dynarray_growf(void *a, size_t cap, size_t membsize);
-static size_t dynarray_first_2n_bigger_than(size_t x);
+void *dynarray_growf(void *a, size_t cap, size_t membsize);
+size_t dynarray_first_2n_bigger_than(size_t x);
 
 #ifdef __cplusplus
 }
@@ -235,7 +235,7 @@ static T *dynarray_growf_wrapper(T *a, size_t cap, size_t membsize) {
 
 #ifdef SHEEP_DYNARRAY_IMPLEMENTATION
 
-static void *dynarray_growf(void *a, size_t cap, size_t membsize) {
+void *dynarray_growf(void *a, size_t cap, size_t membsize) {
     if (a == NULL) {
         a = ((struct _dynarray_info *)DYNARRAY_MALLOC(
                 sizeof(struct _dynarray_info) +
@@ -254,7 +254,7 @@ static void *dynarray_growf(void *a, size_t cap, size_t membsize) {
     return b;
 }
 
-static size_t dynarray_first_2n_bigger_than(size_t x) {
+size_t dynarray_first_2n_bigger_than(size_t x) {
     size_t ret = 1;
     while (ret < x)
         ret <<= 1;

@@ -1,10 +1,10 @@
 #define _POSIX_C_SOURCE 200809L
-#include "config.h"
-#include "fmt.h"
+#include "Config.h"
+#include "Log.h"
 #include <stdlib.h>
 #include <string.h>
 
-void config_parse_line(Config *conf, char *line)
+void config_parse_line(struct Config *conf, char *line)
 {
     if (line == NULL) return;
     char *sep = strchr(line, '=');
@@ -30,8 +30,9 @@ void config_parse_line(Config *conf, char *line)
         }
     } else if (!strcmp(key, "linespacing")) {
         conf->linespacing = strtol(value, NULL, 10);
+    } else if (!strcmp(key, "progressbarheight")) {
+        conf->progress_bar_height = strtol(value, NULL, 10);
     }
-    efmt("ConfigKey: {str}  ConfigValue: {str}\n", key, value);
+    Debug("ConfigKey: {str}  ConfigValue: {str}\n", key, value);
 }
-
 
