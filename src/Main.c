@@ -139,14 +139,15 @@ void run(struct Renderer *r, struct Slide *slide) {
 }
 
 int main(int argc, char **argv) {
+    Log_global_init();
+
     char *src = NULL;
     bool simple = false;
 
+    Info("Sslide version %s", VERSION);
+
     for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-v")) {
-            fprintf(stderr, "%s Version: %s\n", argv[0], VERSION);
-            exit(0);
-        } else if (!strcmp(argv[i], "-s")) {
+        if (!strcmp(argv[i], "-s")) {
             simple = true;
         } else {
             src = argv[i];
@@ -159,7 +160,7 @@ int main(int argc, char **argv) {
         src = tinyfd_openFileDialog("Open slide", home, 0, 0, 0, false);
         String_free(home);
         if (!src) {
-            fprintf(stderr, "Usage: %s [OPTIONS] <FILE>\n", argv[0]);
+            Info("Usage: %s [OPTIONS] <FILE>\n", argv[0]);
             return 0;
         }
     } else if (!strcmp(src, "-")) {

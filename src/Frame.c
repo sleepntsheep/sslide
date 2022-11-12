@@ -2,6 +2,7 @@
 #include "dynarray.h"
 #include "Global.h"
 #include "Font.h"
+#include "Log.h"
 #include "Rect.h"
 #include "String.h"
 #include <SDL2/SDL_ttf.h>

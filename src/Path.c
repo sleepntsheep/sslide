@@ -16,7 +16,8 @@
 #endif
 #include "String.h"
 
-bool Path_isrelative(char *path) {
+bool Path_isrelative(const char *path) {
+    if (!path) return false;
 #ifndef _WIN32 /* path beginning with root is absolute path */
     return path[0] != '/';
 #else /* relative path in windows is complicated */
@@ -36,5 +37,26 @@ String Path_gethome(void) {
     return String_make(p);
 #endif
     return NULL;
+}
+
+String Path_dirname(const char *path) {
+    if (!path) return NULL;
+#ifdef _WIN32
+    /* note - im not sure if this WIN32 version work */
+    String s = String_make(path);
+    char *p = strrchr(s, '/');
+    if (p) {
+        *p = 0;
+    } else {
+        p = strrchr(s, '\\');
+        *p = 0;
+    }
+    return s;
+#else
+    String s = String_make(path);
+    char *p = strrchr(s, '/');
+    if (p) *p = 0;
+    return s;
+#endif
 }
 

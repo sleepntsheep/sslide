@@ -5,9 +5,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+#include "String.h"
 
 struct Config {
-    char *font;
+    String font;
     SDL_Color bg;
     SDL_Color fg;
     bool simple;

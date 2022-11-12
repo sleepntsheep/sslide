@@ -7,6 +7,7 @@
 #define PATH_MAX 4096
 #endif
 
-bool Path_isrelative(char *path);
+bool Path_isrelative(const char *path);
 String Path_gethome(void);
+String Path_dirname(const char *path);
 

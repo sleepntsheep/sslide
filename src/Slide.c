@@ -1,10 +1,11 @@
 #define _POSIX_C_SOURCE 200809L
 #include <errno.h>
 #include <libgen.h>
-#include "Slide.h"
 #include "dynarray.h"
+#include "Slide.h"
 #include "Global.h"
 #include "Path.h"
+#include "Log.h"
 
 #define SSLIDE_BUFSIZE 8192 /* max line length */
 
@@ -98,10 +99,14 @@ int Slide_parse(struct Slide *slide, char *path, const bool simple) {
     struct Image image = {0};
     int x = 0, y = 0, w = 100, h = 100;
     int type = FrameNone;
+
     String *lines = dynarray_new;
-    char *path_dir = dirname(strdup(path));
-    if (in == stdin)
+    char *path_dir = NULL;
+    if (in == stdin) {
         path_dir = ".";
+    } else {
+        path_dir = Path_dirname(path);
+    }
     int in_config = 0;
 
     Info("Parsing file %s : simple: %s", path, simple ? "true" : "false");

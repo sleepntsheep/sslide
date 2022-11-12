@@ -21,7 +21,7 @@ void config_parse_line(struct Config *conf, char *line)
         c->b = (uint8_t)(tmp & 0x0000FF);
         c->a = 0xFF;
     } else if (!strcmp(key, "font")) {
-        conf->font = strdup(value);
+        conf->font = String_make(value);
     } else if (!strcmp(key, "simple")) {
         if (value[0] == 'f' || value[0] == '0') {
             conf->simple = false;
