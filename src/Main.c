@@ -1,8 +1,4 @@
-/* sslide - sleepntsheep 2022
- *
- * I am ashamed for extensive use of global variable here, forgive me
- *
- */
+/* sslide - sleepntsheep 2022 */
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -171,10 +167,10 @@ int main(int argc, char **argv) {
     struct Renderer renderer;
     Renderer_init(&renderer, src);
     run(&renderer, &slide);
+
     Slide_cleanup(&slide);
     Renderer_cleanup(&renderer);
     Renderer_global_cleanup();
-
     return EXIT_SUCCESS;
 }
 
