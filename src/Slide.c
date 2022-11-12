@@ -43,6 +43,24 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
     FILE *in = NULL;
     int line = 0;
     slide->valid = true;
+    struct Page page = {0};
+    struct Image image = {0};
+    int x = 0, y = 0, w = 100, h = 100;
+    int type = FrameNone;
+    int in_config = 0;
+
+    StringArray lines = StringArray_new();
+    StringArray flines = StringArray_new();
+    String text = String_make("");
+    size_t fsize = 0;
+    size_t flinecount = 1;
+
+    char *path_dir = NULL;
+    if (in == stdin) {
+        path_dir = Path_dirname(".");
+    } else {
+        path_dir = Path_dirname(path);
+    }
 
     if (strcmp(path, "-") != 0) {
         if (!(in = fopen(path, "r"))) {
@@ -54,8 +72,6 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
         in = stdin;
     }
 
-    String text = String_make("");
-    size_t fsize = 0;
     if (in != stdin) {
         fseek(in, 0L, SEEK_END);
         fsize = ftell(in);
@@ -73,7 +89,6 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
         fsize = String_length(text);
     }
 
-    size_t flinecount = 1;
     for (size_t i = 0; i <= fsize; i++) {
         if (text[i] == '\n') {
             text[i] = 0;
@@ -85,7 +100,6 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
 
     /* note - there might be more NUL terminator than flinecount,
      * so mallocing char** while would be faster is not safe */
-    StringArray flines = StringArray_new();
     flines = StringArray_push(flines, text);
     for (size_t i = 0; i < fsize; i++) {
         if (text[i] == 0) {
@@ -93,26 +107,11 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
         }
     }
 
-    Slide_init(slide);
-
-    struct Page page = {0};
-    Page_init(&page);
-    struct Image image = {0};
-    int x = 0, y = 0, w = 100, h = 100;
-    int type = FrameNone;
-
-    StringArray lines = StringArray_new();
-
-    char *path_dir = NULL;
-    if (in == stdin) {
-        path_dir = Path_dirname(".");
-    } else {
-        path_dir = Path_dirname(path);
-    }
-    int in_config = 0;
-
     config.simple = simple;
     Info("Parsing file %s : simple: %s", path, simple ? "true" : "false");
+
+    Slide_init(slide);
+    Page_init(&page);
 
     for (size_t li = 0; li < StringArray_length(flines); li++) {
         char *cline = flines[li];
