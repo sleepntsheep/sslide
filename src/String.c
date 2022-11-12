@@ -153,8 +153,8 @@ String StringArray_join(StringArray sa, const char *delim) {
         String s = String_make(sa[0]);
         size_t delimlen = strlen(delim);
         for (size_t i = 1; i < StringArray_length(sa); i++) {
-            String_catlen(s, delim, delimlen);
-            String_catlen(s, sa[i], String_length(sa[i]));
+            s = String_catlen(s, delim, delimlen);
+            s = String_catlen(s, sa[i], String_length(sa[i]));
         }
         return s;
     }

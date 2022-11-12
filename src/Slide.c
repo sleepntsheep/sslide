@@ -48,7 +48,7 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
         if (!(in = fopen(path, "r"))) {
             Warn("Failed opening file %s: %s", path, strerror(errno));
             slide->valid = false;
-            return;
+            goto cleanup;
         }
     } else {
         in = stdin;
@@ -64,6 +64,7 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
         if (fread(text, fsize, 1, in) != 1) {
             Warn("Failed reading file data: %s", strerror(errno));
         }
+        text[fsize] = 0;
     } else {
         char buf[SSLIDE_BUFSIZE];
         while (fgets(buf, sizeof buf, in)) {
@@ -86,7 +87,7 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
      * so mallocing char** while would be faster is not safe */
     StringArray flines = StringArray_new();
     flines = StringArray_push(flines, text);
-    for (size_t i = 0; i <= fsize; i++) {
+    for (size_t i = 0; i < fsize; i++) {
         if (text[i] == 0) {
             flines = StringArray_push(flines, text + i + 1);
         }
@@ -104,7 +105,7 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
 
     char *path_dir = NULL;
     if (in == stdin) {
-        path_dir = ".";
+        path_dir = Path_dirname(".");
     } else {
         path_dir = Path_dirname(path);
     }
@@ -191,9 +192,11 @@ void Slide_parse(struct Slide *slide, char *path, const bool simple) {
         StringArray_free(lines);
     }
 
+cleanup:
+    if (path_dir) String_free(path_dir);
     Page_cleanup(&page);
-    StringArray_free(flines);
-    String_free(text);
+    if (flines) StringArray_free(flines);
+    if (text) String_free(text);
     if (in != stdin)
         fclose(in);
 }
