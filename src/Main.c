@@ -162,11 +162,13 @@ int main(int argc, char **argv) {
         Info("Reading from stdin");
     }
 
+    struct Slide slide;
     Slide_parse(&slide, src, simple);
     if (!slide.valid)
 		Panic("Failed parsing slide, aborting");
 
     Renderer_global_init();
+    struct Renderer renderer;
     Renderer_init(&renderer, src);
     run(&renderer, &slide);
     Slide_cleanup(&slide);

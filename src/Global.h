@@ -7,8 +7,6 @@
 #include "Renderer.h"
 
 extern struct Config config;
-extern struct Renderer renderer;
-extern struct Slide slide;
 
 #endif /* GLOBAL_H */
 
