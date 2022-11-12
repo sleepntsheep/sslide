@@ -3,8 +3,6 @@
  * I am ashamed for extensive use of global variable here, forgive me
  *
  */
-#define _POSIX_C_SOURCE 200809L
-#include <libgen.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -18,12 +16,9 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
-#define SHEEP_DYNARRAY_IMPLEMENTATION
-#include "dynarray.h"
-#define SHEEP_FMT_IMPLEMENTATION
-#include "Log.h"
 #include "tinyfiledialogs.h"
 
+#include "Log.h"
 #include "Config.h"
 #include "Frame.h"
 #include "Font.h"
@@ -168,14 +163,16 @@ int main(int argc, char **argv) {
     }
 
     Slide_parse(&slide, src, simple);
+    if (!slide.valid)
+		Panic("Failed parsing slide, aborting");
 
     Renderer_global_init();
     Renderer_init(&renderer, src);
-
     run(&renderer, &slide);
-
     Slide_cleanup(&slide);
     Renderer_cleanup(&renderer);
     Renderer_global_cleanup();
+
+    return EXIT_SUCCESS;
 }
 

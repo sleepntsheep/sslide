@@ -1,5 +1,4 @@
 #include "Frame.h"
-#include "dynarray.h"
 #include "Global.h"
 #include "Font.h"
 #include "Log.h"
@@ -7,7 +6,7 @@
 #include "String.h"
 #include <SDL2/SDL_ttf.h>
 
-void Frame_text_init(struct Frame *frame, String* lines, int x, int y, int w,
+void Frame_text_init(struct Frame *frame, StringArray lines, int x, int y, int w,
                     int h) {
     frame->type = FrameText;
     frame->x = x;
@@ -17,10 +16,7 @@ void Frame_text_init(struct Frame *frame, String* lines, int x, int y, int w,
     frame->lines = lines;
     frame->valid = true;
     if (lines) {
-        String joined = String_make(lines[0]);
-        for (size_t i = 1; i < arrlen(lines); i++) {
-            joined = String_cat(joined, lines[i]);
-        }
+        String joined = StringArray_join(lines, "");
         if (!config.font) {
             frame->font = Font_covering_ttf(joined);
             if (frame->font == NULL)
@@ -44,11 +40,7 @@ void Frame_image_init(struct Frame *frame, struct Image image, int x, int y, int
 
 void Frame_cleanup(struct Frame *frame) {
     if (frame->type == FrameText) {
-        if (frame->lines) {
-            for (size_t i = 0; i < arrlen(frame->lines); i++)
-                String_free(frame->lines[i]);
-            arrfree(frame->lines);
-        }
+        StringArray_free(frame->lines);
     } else if (frame->type == FrameImage) {
         Image_cleanup(&frame->image);
     }
@@ -59,7 +51,7 @@ int Frame_find_font_size(struct Frame *frame, struct Renderer *r, int *size, int
     /* binary search to find largest font size that fit in frame */
     char *path = config.font ? config.font : frame->font;
     int bl = 0, br = 256;
-    int linecount = dynarray_len(frame->lines);
+    int linecount = StringArray_length(frame->lines);
     int lfac = config.linespacing * (linecount - 1);
     while (bl <= br) {
         int m = bl + (br - bl) / 2;
@@ -69,7 +61,7 @@ int Frame_find_font_size(struct Frame *frame, struct Renderer *r, int *size, int
             Warn("Failed to open font %s: %s", path, TTF_GetError());
             return -1;
         }
-        for (size_t i = 0; i < dynarray_len(frame->lines); i++) {
+        for (int i = 0; i < linecount; i++) {
             int line_w;
             TTF_SizeUTF8(font, frame->lines[i], &line_w, &line_h);
             if (line_w > longest_line_w)
@@ -93,7 +85,7 @@ void Frame_draw(struct Frame *frame, struct Renderer *r) {
     if (!frame->valid) return;
     int framew = frame->w * r->width / 100;
     int frameh = frame->h * r->height / 100;
-    if (frame->type == FrameText && frame->lines) {
+    if (frame->type == FrameText && StringArray_length(frame->lines)) {
         int total_width = 0, total_height = 0, fontsize = 0;
         if (Frame_find_font_size(frame, r, &fontsize, &total_width,
                                  &total_height) != 0) {
@@ -105,7 +97,7 @@ void Frame_draw(struct Frame *frame, struct Renderer *r) {
         int xoffset = (framew - total_width) / 2;
         int yoffset = (frameh - total_height) / 2;
 
-        for (size_t i = 0; i < arrlen(frame->lines); i++) {
+        for (size_t i = 0; i < StringArray_length(frame->lines); i++) {
             SDL_Surface *textsurface =
                 TTF_RenderUTF8_Blended(font, frame->lines[i], config.fg);
             SDL_Texture *texttexture =

@@ -4,8 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-/*
-size_t String_first_2n_not_less_than(size_t x) {
+static size_t first_2n_not_less_than(size_t x) {
     size_t res = 1;
     while (res < x) {
         res *= 2;
@@ -13,11 +12,10 @@ size_t String_first_2n_not_less_than(size_t x) {
     return res;
 }
 
-char *String_ensure_alloc(char *string, size_t enough_for) {
-    size_t newalloc = String_first_2n_not_less_than(enough_for + String_length(string));
-    string = String_realloc(newalloc);
+static String String_ensure_alloc(String string, size_t enough_for) {
+    size_t newalloc = first_2n_not_less_than(enough_for + String_length(string));
+    return String_realloc(string, newalloc);
 }
-*/
 
 struct string {
     size_t alloc;
@@ -25,8 +23,14 @@ struct string {
     char buf[];
 };
 
-struct string *String_getinfo(String string) {
-    return (struct string*)(string - sizeof(struct string));
+struct string_array {
+    size_t alloc;
+    size_t len;
+    String buf[];
+};
+
+static struct string *String_getinfo(String string) {
+    return (struct string*)((char*)string - sizeof(struct string));
 }
 
 size_t String_alloc(String string) {
@@ -64,10 +68,9 @@ String String_cat(String string, const char *cstr) {
 
 String String_catlen(String string, const char *cstr, size_t len) {
     if (string == NULL) return NULL;
-    size_t alloc = String_length(string) + len + 1;
-    string = String_realloc(string, alloc);
+    string = String_ensure_alloc(string, len + 1);
     memcpy(string + String_length(string), cstr, len);
-    string[alloc-1] = 0;
+    string[len] = 0;
     String_getinfo(string)->len += len;
     return string;
 }
@@ -91,4 +94,70 @@ void String_free(String string) {
     free(String_getinfo(string));
 }
 
+static struct string_array *StringArray_getinfo(StringArray sa) {
+    return (struct string_array*)((char*)sa - sizeof(struct string_array));
+}
+
+static StringArray StringArray_ensure_alloc(StringArray sa, size_t enough_for) {
+    size_t newalloc = first_2n_not_less_than(enough_for + StringArray_length(sa));
+    return StringArray_realloc(sa, newalloc);
+}
+
+StringArray StringArray_new(void) {
+    struct string_array *sa = malloc(sizeof *sa + 4 * sizeof (String));
+    if (!sa) return NULL;
+    sa->alloc = 4;
+    sa->len = 0;
+    return sa->buf;
+}
+
+size_t StringArray_alloc(StringArray sa) {
+    return StringArray_getinfo(sa)->alloc;
+}
+
+size_t StringArray_length(StringArray sa) {
+    return StringArray_getinfo(sa)->len;
+}
+
+StringArray StringArray_realloc(StringArray sa, size_t newalloc) {
+    if (!sa) return NULL;
+    if (newalloc <= StringArray_alloc(sa)) return sa;
+    StringArray_getinfo(sa)->alloc = newalloc;
+    struct string_array *newsa = realloc(StringArray_getinfo(sa),
+            sizeof(struct string_array) + newalloc * sizeof(String));
+    if (!newsa) return NULL;
+    return newsa->buf;
+}
+
+StringArray StringArray_push_String(StringArray sa, String s) {
+    if (!sa) return NULL;
+    sa = StringArray_ensure_alloc(sa, 1);
+    StringArray_getinfo(sa)->buf[StringArray_length(sa)] = s;
+    StringArray_getinfo(sa)->len++;
+    return sa;
+}
+
+StringArray StringArray_push(StringArray sa, const char *cstr) {
+    return StringArray_push_String(sa, String_make(cstr));
+}
+
+void StringArray_free(StringArray sa) {
+    if (!sa) return;
+    for (size_t i = 0; i < StringArray_length(sa); i++)
+        String_free(sa[i]);
+    free(StringArray_getinfo(sa));
+}
+
+String StringArray_join(StringArray sa, const char *delim) {
+    if (StringArray_length(sa) > 0) {
+        String s = String_make(sa[0]);
+        size_t delimlen = strlen(delim);
+        for (size_t i = 1; i < StringArray_length(sa); i++) {
+            String_catlen(s, delim, delimlen);
+            String_catlen(s, sa[i], String_length(sa[i]));
+        }
+        return s;
+    }
+    return String_make("");
+}
 

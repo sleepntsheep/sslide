@@ -5,7 +5,7 @@
 #include "Font.h"
 #include "Log.h"
 
-char *Font_covering_ttf(char *text) {
+char *Font_covering_ttf(const char *text) {
     FcCharSet *cs = FcCharSetCreate();
     FcPattern *pat = NULL;
     FcFontSet *matches = NULL;

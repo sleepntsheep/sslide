@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
 #include "Config.h"
 #include "Log.h"
 #include <stdlib.h>
@@ -23,10 +22,10 @@ void config_parse_line(struct Config *conf, char *line)
     } else if (!strcmp(key, "font")) {
         conf->font = String_make(value);
     } else if (!strcmp(key, "simple")) {
-        if (value[0] == 'f' || value[0] == '0') {
-            conf->simple = false;
-        } else {
+        if (!strcmp(value, "true")) {
             conf->simple = true;
+        } else {
+            conf->simple = false;
         }
     } else if (!strcmp(key, "linespacing")) {
         conf->linespacing = strtol(value, NULL, 10);

@@ -1,9 +1,10 @@
 ---
 bg=FFFFFF
-fg=FF0000
-#font=Sarabun.ttf
+fg=000000
+font=/home/sheep/.fonts/Monocraft.otf
 linespacing=3
 progressbarheight=4
+simple=false
 ---
 
 ;f

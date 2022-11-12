@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 #include "Image.h"
 #include "Rect.h"
+#include "Log.h"
 
 void Image_init(struct Image *image, char *path) {
     image->valid = true;
@@ -11,9 +12,7 @@ void Image_init(struct Image *image, char *path) {
 }
 
 void Image_load_texture(struct Image *image, struct Renderer *r) {
-    if (!image->valid)
-        return;
-    if (image->texture)
+    if (!image->valid || image->texture)
         return;
     image->texture = IMG_LoadTexture(r->rend, image->path);
     int w = 0, h = 0;
