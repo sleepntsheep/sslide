@@ -2,6 +2,16 @@
 #include "Log.h"
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+
+static long strtol_wrap(const char *s) {
+    errno = 0;
+    long r = strtol(s, NULL, 10);
+    if (errno != 0) {
+        Warn("Failed converting %s to integer", s);
+    }
+    return r;
+}
 
 void config_parse_line(struct Config *conf, char *line)
 {
@@ -27,6 +37,10 @@ void config_parse_line(struct Config *conf, char *line)
         conf->linespacing = strtol(value, NULL, 10);
     } else if (!strcmp(key, "progressbarheight")) {
         conf->progress_bar_height = strtol(value, NULL, 10);
+    } else if (!strcmp(key, "marginx")) {
+        conf->margin_x = strtol_wrap(value);
+    } else if (!strcmp(key, "marginy")) {
+        conf->margin_y = strtol_wrap(value);
     }
     Debug("ConfigKey: {str}  ConfigValue: {str}\n", key, value);
 }

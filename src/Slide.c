@@ -14,25 +14,29 @@ void Slide_init(struct Slide *slide) {
 }
 
 void Slide_push(struct Slide *slide, struct Page page) {
-    if (slide->length == slide->alloc)
+    if (slide->length == slide->alloc) {
         slide->pages = realloc(slide->pages, sizeof (struct Page) * (slide->alloc *= 2));
+    }
     slide->pages[slide->length++] = page;
 }
 
 void Slide_cleanup(struct Slide *slide) {
-    for (size_t i = 0; i < slide->length; i++)
+    for (size_t i = 0; i < slide->length; i++) {
         Page_cleanup(&slide->pages[i]);
+    }
     free(slide->pages);
 }
 
 void Slide_next(struct Slide *slide) {
-    if (slide->cur < slide->length - 1)
+    if (slide->cur < slide->length - 1) {
         slide->cur++;
+    }
 }
 
 void Slide_prev(struct Slide *slide) {
-    if (slide->cur > 0)
+    if (slide->cur > 0) {
         slide->cur--;
+    }
 }
 
 struct Page *Slide_current_page(struct Slide *slide) {

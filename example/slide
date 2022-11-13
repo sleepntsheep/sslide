@@ -5,6 +5,8 @@ fg=000000
 linespacing=10
 progressbarheight=4
 simple=false
+marginy=5
+marginx=10
 ---
 
 ;f

@@ -15,7 +15,7 @@ struct Image {
 
 void Image_init(struct Image *, char *);
 void Image_load_texture(struct Image *, struct Renderer *r);
-void Image_draw(struct Image *image, struct Renderer *r, const struct Rect *rect);
+void Image_draw(struct Image *image, struct Renderer *r, const struct Rect rect);
 void Image_cleanup(struct Image *);
 
 #endif /* SSLIDE_IMAGE_H */

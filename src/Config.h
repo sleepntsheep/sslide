@@ -14,6 +14,8 @@ struct Config {
     bool simple;
     int progress_bar_height;
     int linespacing;
+    int margin_x;
+    int margin_y;
 };
 
 static const struct Config config_default = {
@@ -23,6 +25,8 @@ static const struct Config config_default = {
     .simple = false,
     .progress_bar_height = 5,
     .linespacing = 3,
+    .margin_x = 10,
+    .margin_y = 10,
 };
 
 void config_parse_line(struct Config *conf, char *line);

@@ -31,7 +31,7 @@ void Image_cleanup(struct Image *image) {
         SDL_DestroyTexture(image->texture);
 }
 
-void Image_draw(struct Image *image, struct Renderer *r, const struct Rect *rect) {
+void Image_draw(struct Image *image, struct Renderer *r, const struct Rect rect) {
     if (!image->valid)
         return;
     Image_load_texture(image, r);
@@ -39,20 +39,19 @@ void Image_draw(struct Image *image, struct Renderer *r, const struct Rect *rect
     /* find maximum (width, height) which
      * width <= .width, height <= .height
      * and width / height == ratio */
-    int hbyw = rect->w / image->ratio;
-    int wbyh = rect->h * image->ratio;
-    if (hbyw <= rect->h) {
-        bound.w = rect->w;
-        bound.h = hbyw;
+    int imgh = rect.w / image->ratio;
+    int imgw = rect.h * image->ratio;
+    if (imgh <= rect.h) {
+        bound.w = rect.w;
+        bound.h = imgh;
+    } else if (imgw <= rect.w) {
+        bound.w = imgw;
+        bound.h = rect.h;
     }
-    if (wbyh <= rect->w) {
-        bound.w = wbyh;
-        bound.h = rect->h;
-    }
-    int xoffset = (rect->w - bound.w) / 2;
-    int yoffset = (rect->h - bound.h) / 2;
-    bound.x = rect->x + xoffset;
-    bound.y = rect->y + yoffset;
+    int xoffset = (rect.w - bound.w) / 2;
+    int yoffset = (rect.h - bound.h) / 2;
+    bound.x = rect.x + xoffset;
+    bound.y = rect.y + yoffset;
     SDL_RenderCopy(r->rend, image->texture, NULL, &bound);
 }
 

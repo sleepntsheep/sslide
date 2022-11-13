@@ -25,7 +25,7 @@
 #include "Page.h"
 #include "Slide.h"
 
-#define VERSION "0.0.15"
+#define VERSION "0.0.16"
 
 void drawprogressbar(struct Renderer *r, float progress /* value between 0 and 1 */) {
     if (config.progress_bar_height == 0) return;
@@ -107,9 +107,12 @@ void run(struct Renderer *r, struct Slide *slide) {
                     redraw = true;
                     break;
                 case SDL_WINDOWEVENT_MOVED:
+                case SDL_WINDOWEVENT_SHOWN:
                 case SDL_WINDOWEVENT_EXPOSED:
                     redraw = true;
                     break;
+                case SDL_WINDOWEVENT_CLOSE:
+                    return;
                 default:
                     break;
                 }
